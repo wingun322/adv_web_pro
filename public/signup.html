@@ -10,28 +10,36 @@
     <header>
         <h1>Signup</h1>
         <nav>
-            <a href="index.html">Home</a>
-            <a href="login.html">Login</a>
+            <div id="auth-links">
+                <a href="index.html">Home</a>
+                <a href="login.html">Login</a>
+            </div>
         </nav>
     </header>
     <main>
-        <form id="signupForm">
-            <div>
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div>
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            <div>
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit">Signup</button>
-        </form>
+        <div class="form-container">
+            <form id="signupForm">
+                <div class="input-group">
+                    <label for="username"></label>
+                    <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                </div>
+                <div class="input-group">
+                    <label for="email"></label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="input-group">
+                    <label for="password"></label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+                <div class="button-group">
+                    <button type="submit">Signup</button>
+                    <button type="button" onclick="resetForm()">Cancel</button>
+                </div>
+            </form>
+        </div>
     </main>
     <script>
+        // 회원가입 폼 제출 처리
         document.getElementById('signupForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             const username = event.target.username.value;
@@ -47,13 +55,19 @@
             });
 
             if (response.ok) {
-                // Handle successful signup (redirect or show message)
+                // 회원가입 성공 시 로그인 페이지로 리디렉션
                 window.location.href = 'login.html';
             } else {
-                // Handle error (show message)
+                // 회원가입 실패 시 오류 메시지
                 alert('Signup failed');
             }
         });
+
+        // 취소 버튼 처리
+        function resetForm() {
+            document.getElementById('signupForm').reset();
+            window.location.href = 'index.html'; // 취소 시 홈페이지로 리다이렉트
+        }
     </script>
 </body>
 </html>

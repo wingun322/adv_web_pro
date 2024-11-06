@@ -75,10 +75,9 @@ exports.logout = (req, res) => {
 };
 
 exports.getUserInfo = async (req, res) => {
-  const userId = req.params.id; // authMiddleware에서 설정한 req.user에서 ID 가져오기
-  console.log(userId);
+  const userId = req.user.id; // Get the user ID from req.user set by authMiddleware
   try {
-    const user = await User.findById(userId).select("-password"); // 비밀번호 제외하고 사용자 정보 가져오기
+    const user = await User.findById(userId).select("-password"); // Exclude password
     if (!user) return res.status(404).json({ error: "사용자를 찾을 수 없습니다." });
 
     res.json({ user: { id: user._id, username: user.username, email: user.email } });

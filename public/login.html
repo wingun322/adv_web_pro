@@ -10,24 +10,32 @@
     <header>
         <h1>Login</h1>
         <nav>
-            <a href="index.html">Home</a>
-            <a href="signup.html">Signup</a>
+            <div id="auth-links">
+                <a href="index.html">Home</a>
+                <a href="signup.html">Signup</a>
+            </div>
         </nav>
     </header>
     <main>
-        <form id="loginForm">
-            <div>
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            <div>
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit">Login</button>
-        </form>
+        <div class="form-container">
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="email"></label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="input-group">
+                    <label for="password"></label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+                <div class="button-group">
+                    <button type="submit">Login</button>
+                    <button type="button" onclick="resetForm()">Cancel</button>
+                </div>
+            </form>
+        </div>
     </main>
     <script>
+        // 로그인 폼 제출 처리
         document.getElementById('loginForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             const email = event.target.email.value;
@@ -42,13 +50,19 @@
             });
 
             if (response.ok) {
-                // Handle successful login (redirect or show message)
-                window.location.href = 'index.html';
+                const data = await response.json();
+                localStorage.setItem('accessToken', data.accessToken);
+                window.location.href = 'index.html'; // 로그인 성공 후 홈페이지로 리다이렉트
             } else {
-                // Handle error (show message)
                 alert('Login failed');
             }
         });
+
+        // 취소 버튼 처리
+        function resetForm() {
+            document.getElementById('loginForm').reset();
+            window.location.href = 'index.html'; // 취소 시 홈페이지로 리다이렉트
+        }
     </script>
 </body>
 </html>
