@@ -4,7 +4,7 @@ const authMiddleware = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
-// Define your routes
+// /api/auth 라우트
 router.post("/register", authController.register);
 router.post("/login", authController.login);
 router.post("/refresh-token", authController.refreshToken);

@@ -17,7 +17,7 @@ exports.register = async (req, res) => {
     const existingEmail = await User.findOne({ email });
     console.log(1);
     if (existingEmail) {
-      return res.status(400).json({ error: "이미 사용 중인 이메일입니다." });
+      return res.status(400).json({ error: "이미 사용 중인 이메일입니다." }); 
     }
 
     const existingUsername = await User.findOne({ username });
@@ -74,6 +74,7 @@ exports.logout = (req, res) => {
   res.json({ message: "로그아웃 성공. 클라이언트 측에서 토큰을 삭제하세요." });
 };
 
+//유저 정보 가져오기
 exports.getUserInfo = async (req, res) => {
   const userId = req.user.id; // Get the user ID from req.user set by authMiddleware
   try {
