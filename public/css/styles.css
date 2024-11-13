@@ -1,0 +1,131 @@
+/* 전체 페이지 스타일 */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+}
+
+h1 {
+    margin: 0;
+}
+
+main {
+    flex: 1; /* 페이지의 나머지 공간을 차지 */
+    display: flex;
+    justify-content: center; /* 가로 중앙 정렬 */
+    align-items: center; /* 세로 중앙 정렬 */
+    padding: 20px;
+    min-height: 100vh; /* 화면의 전체 높이를 사용하여 정확히 가운데 정렬 */
+}
+
+/* 오른쪽 정렬 스타일 */
+.nav-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+#auth-links a,
+#user-info p {
+    margin-left: 10px;
+}
+
+#auth-links a {
+    text-decoration: none;
+    color: #007bff;
+}
+
+#auth-links a:hover {
+    text-decoration: underline;
+}
+
+#user-info {
+    display: flex;
+    align-items: center;
+}
+
+/* 드롭다운 메뉴 스타일 */
+#dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 5px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.8); /* 반투명 배경 */
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+    display: none;
+}
+
+/* 로그아웃 버튼 스타일 */
+#dropdown-menu button {
+    padding: 5px 10px;
+    background-color: rgba(255, 255, 255, 0.6);
+    color: #000;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 5px; /* 둥근 모서리 추가 */
+}
+
+#dropdown-menu button:hover {
+    background-color: rgba(0, 0, 0, 0.1); /* 호버 시 더 어두운 반투명 색상 */
+}
+
+/* 로그인 폼 버튼 그룹 스타일 */
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.button-group button {
+    padding: 10px;
+    font-size: 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 45%;;
+}
+
+.button-group button:first-child {
+    background-color: #007bff;
+    color: white;
+}
+
+.button-group button:first-child:hover {
+    background-color: #0056b3;
+}
+
+.button-group button:last-child {
+    background-color: #ccc;
+    color: #333;
+    position: relative;
+    left: 32px;
+}
+
+.button-group button:last-child:hover {
+    background-color: #999;
+}
+
+form div {
+    margin-bottom: 20px; /* 각 입력창 간격을 늘림 */
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%; /* 입력창 너비를 100%로 설정 */
+    padding: 15px; /* 입력창 내부 여백을 늘림 */
+    border: 1px solid #ccc;
+    border-radius: 5px; /* 둥근 모서리 */
+    font-size: 18px; /* 폰트 크기 증가 */
+}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="css/styles.css"> <!-- Link to your CSS file -->
+</head>
+<body>
+    <header>
+        <h1>Login</h1>
+        <nav>
+            <div id="auth-links">
+                <a href="index.html">Home</a>
+                <a href="signup.html">Signup</a>
+            </div>
+        </nav>
+    </header>
+    <main>
+        <div class="form-container">
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="email"></label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="input-group">
+                    <label for="password"></label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+                <div class="button-group">
+                    <button type="submit">Login</button>
+                    <button type="button" onclick="resetForm()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </main>
+    <script>
+        // 로그인 폼 제출 처리
+        document.getElementById('loginForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const email = event.target.email.value;
+            const password = event.target.password.value;
+
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('accessToken', data.accessToken);
+                window.location.href = 'index.html'; // 로그인 성공 후 홈페이지로 리다이렉트
+            } else {
+                alert('Login failed');
+            }
+        });
+
+        // 취소 버튼 처리
+        function resetForm() {
+            document.getElementById('loginForm').reset();
+            window.location.href = 'index.html'; // 취소 시 홈페이지로 리다이렉트
+        }
+    </script>
+</body>
+</html>
