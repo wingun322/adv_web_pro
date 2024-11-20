@@ -34,7 +34,7 @@
                 <input type="password" id="passwordConfirm" name="passwordConfirm" placeholder="Confirm your password" required>
             </div>
             <div class="button-group">
-                <button type="submit" id="submitBtn" disabled>Signup</button>
+                <button type="submit" id="submitBtn">Signup</button>
                 <button type="button" onclick="resetForm()">Cancel</button>
             </div>
         </form>
@@ -44,7 +44,7 @@
 <script>
     // Handle form submission
     document.getElementById('signupForm').addEventListener('submit', async (event) => {
-        event.preventDefault();
+        event.preventDefault(); // 폼의 기본 제출 동작을 막음
 
         const username = event.target.username.value;
         const email = event.target.email.value;
@@ -56,6 +56,7 @@
             return;
         }
 
+        // 서버로 회원가입 요청 보내기
         const response = await fetch('/api/auth/register', {
             method: 'POST',
             headers: {
@@ -64,10 +65,13 @@
             body: JSON.stringify({ username, email, password }),
         });
 
+        // 서버 응답 처리
         if (response.ok) {
+            // 회원가입 성공 시 login.html로 리디렉션
             window.location.href = 'login.html';
         } else {
-            alert('Signup failed');
+            const result = await response.json();
+            alert('Signup failed: ' + result.error);
         }
     });
 

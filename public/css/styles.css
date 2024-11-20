@@ -1,8 +1,10 @@
 /* 전체 페이지 스타일 */
-body {
+html, body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    overflow-x: hidden; /* 좌우 스크롤을 숨김 */
+    height: 100%;  /* 전체 화면 높이를 설정 */
 }
 
 header {
@@ -19,12 +21,78 @@ h1 {
 }
 
 main {
-    flex: 1;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: center;  /* 수평 중앙 정렬 */
+    align-items: flex-start;  /* 상단 정렬 */
     padding: 20px;
-    min-height: 100vh;
+    min-height: 100vh;  /* 화면 높이 100% */
+    width: 100%;
+    height: 100%;  /* 부모 요소에 맞게 높이 설정 */
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;  /* 최대 너비를 1200px로 설정 */
+    margin: 0 auto;  /* 수평 중앙 정렬 */
+}
+
+/* 암호화폐 정보 섹션 스타일 */
+#crypto-info-section {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* 암호화폐 리스트 스타일 */
+#crypto-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* 각 항목의 최소 너비를 300px로 설정 */
+    gap: 20px; /* 항목 간 간격을 늘림 */
+}
+
+/* 각 암호화폐 항목 카드 스타일 */
+#crypto-list li {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* 호버 효과 */
+#crypto-list li:hover {
+    background-color: #f1f1f1;
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 암호화폐 이름과 가격 스타일 */
+#crypto-list li span {
+    display: block;
+    font-size: 18px;
+    color: #444;
+    margin-bottom: 10px;
+}
+
+#crypto-list li .market-name {
+    font-weight: bold;
+    font-size: 20px;
+}
+
+#crypto-list li .price {
+    font-size: 22px;
+    font-weight: bold;
+    color: #007bff;
 }
 
 /* 오른쪽 정렬 스타일 */
@@ -93,7 +161,7 @@ main {
     font-size: 18px;
     border-radius: 5px;
     cursor: pointer;
-    width: 45%;;
+    width: 45%;
 }
 
 .button-group button:first-child {
@@ -147,67 +215,126 @@ input[type="password"] {
     text-decoration: none;
 }
 
-/* 암호화폐 정보 섹션 스타일 */
-#crypto-info-section {
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-    text-align: center;
-}
-
-#crypto-info-section h2 {
-    font-size: 24px;
-    color: #333;
-    margin-bottom: 20px;
-    font-weight: 600;
-}
-
-/* 암호화폐 리스트 스타일 */
-#crypto-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-}
-
-/* 각 암호화폐 항목 카드 스타일 */
-#crypto-list li {
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
+/* 채팅박스 스타일 */
+#chat-box {
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
     background-color: #f9f9f9;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-#crypto-list li:hover {
+/* 채팅 메시지 스타일 */
+#chat-box div {
     background-color: #f1f1f1;
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    word-wrap: break-word;
+    max-width: 80%;
 }
 
-/* 암호화폐 이름과 가격 스타일 */
-#crypto-list li span {
-    display: block;
-    font-size: 18px;
-    color: #444;
-    margin-bottom: 10px;
+/* 사용자 메시지 스타일 */
+#chat-box .user-message {
+    background-color: #007bff;
+    color: white;
+    align-self: flex-end;
+    border-radius: 10px;
+    padding: 8px 15px;
 }
 
-#crypto-list li .market-name {
+/* 다른 사용자 메시지 스타일 */
+#chat-box .other-message {
+    background-color: #e0e0e0;
+    color: #333;
+    align-self: flex-start;
+    border-radius: 10px;
+    padding: 8px 15px;
+}
+
+/* 입력창 스타일 */
+#message-input {
+    width: calc(100% - 100px);
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    margin-right: 10px;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+#message-input:focus {
+    border-color: #007bff;
+}
+
+/* 전송 버튼 스타일 */
+button {
+    padding: 12px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* 버튼 비활성화 스타일 */
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* 전체 페이지 레이아웃 */
+header .logo {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.5rem;
     font-weight: bold;
-    font-size: 20px;
+    color: #f32f2f;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-style: italic;
+    background: linear-gradient(90deg, #b71c1c, #d32f2f); /* Add gradient */
+    -webkit-background-clip: text; /* Clip background to text */
+    -webkit-text-fill-color: transparent; /* Make text color transparent to show gradient */
 }
 
-#crypto-list li .price {
-    font-size: 22px;
-    font-weight: bold;
-    color: #007bff;
+/* 채팅 입력창 및 버튼 그룹 스타일 */
+#message-input, button {
+    margin: 5px 0;
+}
+
+/* 메시지 스타일링 */
+.user-message {
+    background-color: #d3f8e2; /* 사용자 메시지 배경색 */
+    text-align: right; /* 우측 정렬 */
+    padding: 8px;
+    margin: 5px;
+    border-radius: 5px;
+}
+
+.other-message {
+    background-color: #f1f1f1; /* 다른 사용자 메시지 배경색 */
+    text-align: left; /* 좌측 정렬 */
+    padding: 8px;
+    margin: 5px;
+    border-radius: 5px;
+}
+
+.message-input-container {
+    display: flex; /* 플렉스 박스로 배치 */
+    align-items: center; /* 세로 정렬 중앙 */
+    gap: 10px; /* 입력창과 버튼 사이 간격 */
+    margin-top: 10px; /* 위쪽에 여백 추가 */
 }

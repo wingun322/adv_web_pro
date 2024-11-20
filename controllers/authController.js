@@ -15,14 +15,12 @@ exports.register = async (req, res) => {
   const { username, email, password } = req.body;
   try {
     const existingEmail = await User.findOne({ email });
-    console.log(1);
     if (existingEmail) {
-      return res.status(400).json({ error: "이미 사용 중인 이메일입니다." }); 
+      return res.status(400).json({ error: "이미 사용 중인 이메일입니다." });
     }
 
     const existingUsername = await User.findOne({ username });
     if (existingUsername) {
-        console.log(2);
       return res.status(400).json({ error: "이미 사용 중인 유저네임입니다." });
     }
 
@@ -30,6 +28,7 @@ exports.register = async (req, res) => {
     await newUser.save();
     res.status(201).json({ message: "회원가입 성공" });
   } catch (error) {
+    console.error('회원가입 실패:', error);  // 에러 로그 추가
     res.status(400).json({ error: "회원가입 실패: " + error.message });
   }
 };

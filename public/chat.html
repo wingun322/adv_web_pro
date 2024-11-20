@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/styles.css">
+  <title>Chat Room</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const cryptoId = new URLSearchParams(window.location.search).get('cryptoId');
+    const socket = io(); // Socket.IO 클라이언트 연결
+    let username;
+
+    // 초기 로딩 표시
+    function toggleLoading(show) {
+      const chatBox = document.getElementById("chat-box");
+      if (show) {
+        chatBox.innerHTML = '<p class="loading">Loading messages...</p>';
+      } else {
+        const loadingMessage = document.querySelector('.loading');
+        if (loadingMessage) loadingMessage.remove();
+      }
+    }
+
+    // 로그인 상태 확인
+    async function checkLoginStatus() {
+      const token = localStorage.getItem('accessToken');
+
+      if (token) {
+        try {
+          const response = await fetch('/api/auth/user', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            username = data.user.username;
+          } else {
+            handleUnauthenticated();
+          }
+        } catch (error) {
+          console.error('Error during authentication:', error);
+          handleUnauthenticated();
+        }
+      } else {
+        handleUnauthenticated();
+      }
+    }
+
+    function handleUnauthenticated() {
+      localStorage.removeItem('accessToken');
+      alert('You must log in to access the chat!');
+      window.location.href = 'index.html';
+    }
+
+    // 메시지 로드
+    async function loadMessages() {
+      toggleLoading(true);
+      try {
+        const response = await fetch(`/api/chat/messages/${cryptoId}`);
+        if (response.ok) {
+          const { messages } = await response.json();
+          toggleLoading(false);
+          messages.forEach(displayMessage);
+        } else {
+          console.error('Failed to load messages');
+          toggleLoading(false);
+        }
+      } catch (error) {
+        console.error('Error loading messages:', error);
+        toggleLoading(false);
+      }
+    }
+
+    // 메시지 출력
+    function displayMessage({ username: sender, text, time }) {
+      const chatBox = document.getElementById("chat-box");
+      const messageElement = document.createElement("div");
+      const messageTime = new Date(time).toLocaleTimeString();
+
+      messageElement.classList.add(sender === username ? "user-message" : "other-message");
+      messageElement.innerHTML = `
+        <span class="message-time">[${messageTime}]</span>
+        <strong>${sender}:</strong> ${text}`;
+      chatBox.appendChild(messageElement);
+
+      // 스크롤을 최신 메시지로
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // 메시지 전송
+    socket.on("message", (data) => {
+      // 본인이 보낸 메시지는 이미 표시되었으므로 무시
+      if (data.username === username) return;
+
+
+    });
+
+    function sendMessage() {
+      const messageInput = document.getElementById("message-input");
+      const text = messageInput.value.trim();
+
+      if (!text) return;
+
+      const messageData = {
+        cryptoId,
+        username,
+        text,
+        time: new Date().toISOString(),
+      };
+
+      displayMessage(messageData); // 메시지 미리 표시
+      socket.emit("message", messageData); // 서버로 전송
+      messageInput.value = ""; // 입력창 비우기
+    }
+
+
+    window.onload = async function() {
+      await checkLoginStatus();
+      await loadMessages(); // 메시지 로드
+      socket.emit("joinRoom", cryptoId);
+
+      // 서버에서 받은 메시지 출력
+      socket.on("message", displayMessage);
+    };
+  </script>
+</head>
+<body>
+<header>
+  <a href="index.html" class="logo">Bit Chat</a>
+</header>
+<main>
+  <div class="container">
+    <div id="chat-box" class="chat-box">
+      <!-- 메시지가 동적으로 추가됩니다 -->
+    </div>
+    <div class="message-input-container">
+      <input
+              type="text"
+              id="message-input"
+              placeholder="Type a message..."
+              maxlength="500"
+              autofocus
+      />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+</main>
+</body>
+</html>

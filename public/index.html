@@ -1,154 +1,199 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Main Page</title>
-        <link rel="stylesheet" href="css/styles.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Page</title>
+    <link rel="stylesheet" href="css/styles.css">
 
-        <!-- 캐시 방지 메타 태그 추가 -->
-        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-        <meta http-equiv="Pragma" content="no-cache">
-        <meta http-equiv="Expires" content="0">
+    <!-- 캐시 방지 메타 태그 추가 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 
-        <script>
-            async function checkLoginStatus() {
-                const token = localStorage.getItem('accessToken');
+    <script>
+        // 로그인 상태 확인 함수
+        async function checkLoginStatus() {
+            const token = localStorage.getItem('accessToken');
 
-                if (token) {
-                    try {
-                        const response = await fetch('http://localhost:5000/api/auth/user', {
-                            method: 'GET',
-                            headers: {
-                                'Authorization': 'Bearer ' + token
-                            }
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            displayUserInfo(data.user);
-                        } else {
-                            localStorage.removeItem('accessToken');
-                            showAuthLinks();
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        showAuthLinks();
-                    }
-                } else {
-                    showAuthLinks();
-                }
-            }
-
-            function displayUserInfo(user) {
-                document.getElementById('auth-links').style.display = 'none';
-                document.getElementById('user-info').style.display = 'flex';
-                document.getElementById('username').innerText = user.username;
-            }
-
-            function showAuthLinks() {
-                document.getElementById('auth-links').style.display = 'block';
-                document.getElementById('user-info').style.display = 'none';
-            }
-
-            async function logout() {
+            if (token) {
                 try {
-                    const response = await fetch('http://localhost:5000/api/auth/logout', {
-                        method: 'POST',
-                        credentials: 'include'
+                    const response = await fetch('http://localhost:5000/api/auth/user', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': 'Bearer ' + token
+                        }
                     });
 
                     if (response.ok) {
+                        const data = await response.json();
+                        displayUserInfo(data.user);
+                    } else {
                         localStorage.removeItem('accessToken');
                         showAuthLinks();
-                    } else {
-                        console.error('Failed to logout');
                     }
                 } catch (error) {
-                    console.error('Logout error:', error);
+                    console.error('Error:', error);
+                    showAuthLinks();
                 }
+            } else {
+                showAuthLinks();
             }
+        }
 
-            function toggleDropdown() {
-                const dropdownMenu = document.getElementById('dropdown-menu');
-                dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
-            }
+        // 사용자 정보를 표시하는 함수
+        function displayUserInfo(user) {
+            document.getElementById('auth-links').style.display = 'none';
+            document.getElementById('user-info').style.display = 'flex';
+            document.getElementById('username').innerText = user.username;
+        }
 
-            async function fetchCryptoData() {
-                try {
-                    const response = await fetch('http://localhost:5000/api/market');
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log(data)
-                        displayCryptoData(data);
-                    } else {
-                        console.error('Failed to fetch cryptocurrency data');
-                    }
-                } catch (error) {
-                    console.error('Error fetching crypto data:', error);
-                }
-            }
+        // 인증 링크 보여주는 함수
+        function showAuthLinks() {
+            document.getElementById('auth-links').style.display = 'block';
+            document.getElementById('user-info').style.display = 'none';
+        }
 
-            function displayCryptoData(data) {
-                const cryptoList = document.getElementById('crypto-list');
-                cryptoList.innerHTML = ''; // Clear previous data
-
-                data.forEach(item => {
-                    const listItem = document.createElement('li');
-                    const marketName = document.createElement('span');
-                    marketName.textContent = `${item.koreanName}`;
-                    const price = document.createElement('span');
-                    price.textContent = `${item.tradePrice} KRW`;
-                    price.style.color = item.priceColor;
-                    listItem.appendChild(marketName);
-                    listItem.appendChild(price);
-                    cryptoList.appendChild(listItem);
+        // 로그아웃 함수
+        async function logout() {
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
                 });
-            }
 
-            function startAutoRefresh() {
-                fetchCryptoData(); // Initial fetch
-                setInterval(fetchCryptoData, 10000); // Repeat every 10 seconds
-            }
-
-            window.addEventListener('pageshow', function(event) {
-                if (event.persisted) {
-                    checkLoginStatus();
+                if (response.ok) {
+                    localStorage.removeItem('accessToken');
+                    showAuthLinks(); // 로그아웃 후 UI 갱신
+                    updateCryptoList(); // 암호화폐 리스트도 갱신
+                } else {
+                    console.error('Failed to logout');
                 }
-            });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
 
-            window.onload = function() {
+        // 드롭다운 메뉴 토글 함수
+        function toggleDropdown() {
+            const dropdownMenu = document.getElementById('dropdown-menu');
+            dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // 암호화폐 데이터 가져오는 함수
+        async function fetchCryptoData() {
+            try {
+                const response = await fetch('http://localhost:5000/api/market');
+                if (response.ok) {
+                    const data = await response.json();
+                    displayCryptoData(data);
+                } else {
+                    console.error('Failed to fetch cryptocurrency data');
+                }
+            } catch (error) {
+                console.error('Error fetching crypto data:', error);
+            }
+        }
+
+        // 암호화폐 데이터 표시하는 함수
+        function displayCryptoData(data) {
+            const cryptoList = document.getElementById('crypto-list');
+            cryptoList.innerHTML = ''; // 이전 데이터 삭제
+
+            data.forEach(item => {
+                const listItem = document.createElement('li');
+                const marketName = document.createElement('span');
+                marketName.textContent = `${item.koreanName}`;
+                const price = document.createElement('span');
+                price.textContent = `${item.tradePrice} KRW`;
+                price.style.color = item.priceColor;
+
+                // 로그인 상태 확인 후 채팅방 링크 활성화
+                const chatLink = document.createElement('a');
+                chatLink.href = '#';
+                chatLink.textContent = '입장';
+
+                if (!localStorage.getItem('accessToken')) {
+                    chatLink.style.color = 'gray';
+                    chatLink.style.textDecoration = 'none';
+                    chatLink.style.padding = '5px 10px';
+                    chatLink.style.border = '1px solid gray';
+                    chatLink.style.borderRadius = '5px';
+                    chatLink.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        const userConfirmed = confirm('로그인 후 이용 가능합니다. 로그인 페이지로 이동하시겠습니까?');
+                        if (userConfirmed) {
+                            window.location.href = 'login.html';
+                        }
+                    });
+                } else {
+                    chatLink.style.color = 'blue';
+                    chatLink.style.textDecoration = 'none';
+                    chatLink.style.padding = '5px 10px';
+                    chatLink.style.border = '1px solid blue';
+                    chatLink.style.borderRadius = '5px';
+                    chatLink.href = `chat.html?cryptoId=${item.market}`; // 로그인된 경우 채팅방 링크 활성화
+                }
+
+                listItem.appendChild(chatLink);
+                listItem.appendChild(marketName);
+                listItem.appendChild(price);
+                cryptoList.appendChild(listItem);
+            });
+        }
+
+        // 자동 새로 고침 함수
+        function startAutoRefresh() {
+            fetchCryptoData(); // 초기 데이터 가져오기
+            setInterval(fetchCryptoData, 10000); // 10초마다 자동 갱신
+        }
+
+        // 페이지가 새로 로드될 때마다 로그인 상태 확인
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
                 checkLoginStatus();
-                startAutoRefresh();
-            };
-        </script>
-    </head>
-    <body>
-    <header>
-        <a href="index.html" style="text-decoration: none;">
-            <h1 class="logo">Bit Chat</h1>
-        </a>
-        <nav class="nav-right">
-            <div id="auth-links" style="display: none;">
-                <a href="login.html">Login</a>
-                <a href="signup.html">Signup</a>
-            </div>
-            <div id="user-info" style="display: none; position: relative;">
-                <p><span id="username" onclick="toggleDropdown()" style="cursor: pointer;"></span></p>
-                <div id="dropdown-menu" style="display: none;">
-                    <a href="profile.html"><button>Profile</button></a>
-                    <button onclick="logout()">Logout</button>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <main>
-        <div class="container">
-            <section id="crypto-info-section">
-                <h2>현재 암호화폐 가격</h2>
-                <ul id="crypto-list"></ul>
-            </section>
+            }
+        });
+
+        // 페이지 로드 시 로그인 상태 확인 및 데이터 갱신
+        window.onload = function() {
+            checkLoginStatus();
+            startAutoRefresh();
+        };
+
+        // 암호화폐 데이터 새로고침 및 로그인 상태 반영
+        function updateCryptoList() {
+            fetchCryptoData(); // 암호화폐 리스트 새로고침
+        }
+
+    </script>
+</head>
+<body>
+<header>
+    <a href="index.html" style="text-decoration: none;">
+        <h1 class="logo">Bit Chat</h1>
+    </a>
+    <nav class="nav-right">
+        <div id="auth-links" style="display: none;">
+            <a href="login.html">Login</a>
+            <a href="signup.html">Signup</a>
         </div>
-    </main>
-    </body>
-    </html>
+        <div id="user-info" style="display: none; position: relative;">
+            <p><span id="username" onclick="toggleDropdown()" style="cursor: pointer;"></span></p>
+            <div id="dropdown-menu" style="display: none;">
+                <a href="profile.html"><button>Profile</button></a>
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+</header>
+<main>
+    <div class="container">
+        <section id="crypto-info-section">
+            <h2>현재 암호화폐 가격</h2>
+            <ul id="crypto-list"></ul>
+        </section>
+    </div>
+</main>
+</body>
+</html>
