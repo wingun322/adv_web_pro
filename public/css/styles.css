@@ -19,12 +19,12 @@ h1 {
 }
 
 main {
-    flex: 1; /* 페이지의 나머지 공간을 차지 */
+    flex: 1;
     display: flex;
-    justify-content: center; /* 가로 중앙 정렬 */
-    align-items: center; /* 세로 중앙 정렬 */
+    justify-content: center;
+    align-items: center;
     padding: 20px;
-    min-height: 100vh; /* 화면의 전체 높이를 사용하여 정확히 가운데 정렬 */
+    min-height: 100vh;
 }
 
 /* 오른쪽 정렬 스타일 */
@@ -60,7 +60,7 @@ main {
     right: 0;
     margin-top: 5px;
     padding: 10px;
-    background-color: rgba(255, 255, 255, 0.8); /* 반투명 배경 */
+    background-color: rgba(255, 255, 255, 0.8);
     border-radius: 5px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
     display: none;
@@ -74,11 +74,11 @@ main {
     border: none;
     cursor: pointer;
     width: 100%;
-    border-radius: 5px; /* 둥근 모서리 추가 */
+    border-radius: 5px;
 }
 
 #dropdown-menu button:hover {
-    background-color: rgba(0, 0, 0, 0.1); /* 호버 시 더 어두운 반투명 색상 */
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 /* 로그인 폼 버튼 그룹 스타일 */
@@ -123,9 +123,91 @@ form div {
 input[type="text"],
 input[type="email"],
 input[type="password"] {
-    width: 100%; /* 입력창 너비를 100%로 설정 */
-    padding: 15px; /* 입력창 내부 여백을 늘림 */
+    width: 100%;
+    padding: 15px;
     border: 1px solid #ccc;
-    border-radius: 5px; /* 둥근 모서리 */
-    font-size: 18px; /* 폰트 크기 증가 */
+    border-radius: 5px;
+    font-size: 18px;
+}
+
+.logo {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #f32f2f;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-style: italic;
+    background: linear-gradient(90deg, #b71c1c, #d32f2f); /* Add gradient */
+    -webkit-background-clip: text; /* Clip background to text */
+    -webkit-text-fill-color: transparent; /* Make text color transparent to show gradient */
+}
+
+.logo:hover {
+    text-decoration: none;
+}
+
+/* 암호화폐 정보 섹션 스타일 */
+#crypto-info-section {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+#crypto-info-section h2 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+/* 암호화폐 리스트 스타일 */
+#crypto-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+/* 각 암호화폐 항목 카드 스타일 */
+#crypto-list li {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+#crypto-list li:hover {
+    background-color: #f1f1f1;
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 암호화폐 이름과 가격 스타일 */
+#crypto-list li span {
+    display: block;
+    font-size: 18px;
+    color: #444;
+    margin-bottom: 10px;
+}
+
+#crypto-list li .market-name {
+    font-weight: bold;
+    font-size: 20px;
+}
+
+#crypto-list li .price {
+    font-size: 22px;
+    font-weight: bold;
+    color: #007bff;
 }

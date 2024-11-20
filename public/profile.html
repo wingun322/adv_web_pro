@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="css/styles.css">
+
+    <script>
+        async function loadUserInfo() {
+            const token = localStorage.getItem('accessToken');
+
+            if (token) {
+                try {
+                    const response = await fetch('http://localhost:5000/api/auth/user', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': 'Bearer ' + token
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        displayUserInfo(data.user);
+                    } else {
+                        alert("Failed to load user information.");
+                        window.location.href = "login.html"; // Redirect to login page if not authenticated
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert("Error loading user information.");
+                    window.location.href = "login.html"; // Redirect to login page if there's an error
+                }
+            } else {
+                window.location.href = "login.html"; // Redirect to login page if no token is found
+            }
+        }
+
+        function displayUserInfo(user) {
+            document.getElementById('username1').innerText = user.username;
+            document.getElementById('email').innerText = user.email;
+        }
+
+        window.onload = loadUserInfo;
+    </script>
+</head>
+<body>
+    <header>
+        <a href="index.html" style="text-decoration: none;">
+            <h1 class="logo">Bit Chat</h1>
+        </a>
+        <nav>
+        </nav>
+    </header>
+    <main>
+        <p>Here is your profile information:</p>
+        <p><strong>Username:</strong> <span id="username1"></span></p>
+        <p><strong>Email:</strong> <span id="email"></span></p>
+    </main>
+</body>
+</html>

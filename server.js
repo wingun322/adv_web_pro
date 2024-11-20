@@ -3,7 +3,8 @@ const express = require("express");
 const dbConnect = require("./config/dbConnect");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const authRoutes = require("./routes/authRoutes"); // Import your auth routes
+const authRoutes = require("./routes/authRoutes");
+const marketRoutes = require("./routes/marketRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -19,7 +20,8 @@ app.use(express.static("public"));
 dbConnect();
 
 // Use the auth routes
-app.use("/api/auth", authRoutes); // Prefix your routes
+app.use("/api/auth", authRoutes);
+app.use("/api/market", marketRoutes);
 
 // Centralized error handling
 app.use((err, req, res, next) => {
