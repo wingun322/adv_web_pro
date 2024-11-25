@@ -3,83 +3,362 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signup</title>
-    <link rel="stylesheet" href="/css/styles.css"> <!-- Link to your CSS file -->
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-<header>
-    <a href="index.html" style="text-decoration: none;">
-        <h1 class="logo">Bit Chat</h1>
-    </a>
-    <nav></nav>
-</header>
-<main>
-    <div class="form-container">
-        <form id="signupForm">
-            <div class="input-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" placeholder="Enter your username" required>
+    <main>
+        <div class="container">
+            <div id="signupFormContainer">
+                <form id="signupForm">
+                    <h2>Sign Up</h2>
+                    <div class="input-group">
+                        <label for="username">Username:</label>
+                        <div class="input-with-button">
+                            <input type="text" id="username" name="username" required>
+                            <button type="button" class="check-button" onclick="checkUsername()">중복확인</button>
+                        </div>
+                        <small id="usernameMessage" class="validation-message"></small>
+                    </div>
+                    <div class="input-group">
+                        <label for="email">Email:</label>
+                        <div class="input-with-button">
+                            <input type="email" id="email" name="email" required>
+                            <button type="button" class="check-button" onclick="checkEmail()">중복확인</button>
+                        </div>
+                        <small id="emailMessage" class="validation-message"></small>
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required 
+                               minlength="8" 
+                               pattern="^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$">
+                        <small class="password-hint">8자 이상, 영문자, 숫자, 특수문자 포함</small>
+                    </div>
+                    <div class="input-group">
+                        <label for="confirmPassword">Confirm Password:</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                        <small id="passwordMatchMessage" class="password-match-message"></small>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" id="submitButton">Sign Up</button>
+                        <button type="button" onclick="resetForm()">Cancel</button>
+                    </div>
+                </form>
             </div>
-            <div class="input-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" placeholder="Enter your email" required>
-                <div id="emailVerificationMessage"></div>
-            </div>
-            <div class="input-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
-            </div>
-            <div class="input-group">
-                <label for="passwordConfirm">Confirm Password</label>
-                <input type="password" id="passwordConfirm" name="passwordConfirm" placeholder="Confirm your password" required>
-            </div>
-            <div class="button-group">
-                <button type="submit" id="submitBtn">Signup</button>
-                <button type="button" onclick="resetForm()">Cancel</button>
-            </div>
-        </form>
-    </div>
-</main>
 
-<script>
-    // Handle form submission
-    document.getElementById('signupForm').addEventListener('submit', async (event) => {
-        event.preventDefault(); // 폼의 기본 제출 동작을 막음
+            <div id="verificationSection" class="verification-section">
+                <h3>이메일 인증</h3>
+                <p>입력하신 이메일 <br><span id="userEmailDisplay"></span><br>로 인증번호가 전송되었습니다.</p>
+                <div class="input-group">
+                    <input type="text" 
+                           id="verificationCode" 
+                           class="verification-code-input" 
+                           maxlength="6" 
+                           placeholder="000000"
+                           pattern="\d{6}"
+                           autocomplete="off"
+                           required>
+                    <button type="button" 
+                            class="verify-button"
+                            onclick="verifyCode()">
+                        인증하기
+                    </button>
+                </div>
+                <div id="timer" class="timer"></div>
+                <button type="button" 
+                        id="resendButton" 
+                        class="resend-button" 
+                        onclick="resendVerificationCode()" 
+                        disabled>
+                    인증번호 재전송
+                </button>
+            </div>
+        </div>
+    </main>
 
-        const username = event.target.username.value;
-        const email = event.target.email.value;
-        const password = event.target.password.value;
-        const passwordConfirm = event.target.passwordConfirm.value;
+    <script>
+        // 전역 변수 선언
+        let userEmail = '';
+        let timerInterval;
+        const validationState = {
+            username: false,
+            email: false
+        };
 
-        if (password !== passwordConfirm) {
-            alert('Passwords do not match!');
-            return;
+        // validateForm 함수를 먼저 정의
+        function validateForm() {
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirmPassword');
+            const submitButton = document.getElementById('submitButton');
+            const form = document.getElementById('signupForm');
+
+            const isPasswordValid = password.value.length >= 8 && 
+                                  /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(password.value);
+            
+            const isPasswordMatch = password.value === confirmPassword.value && password.value !== '';
+
+            const isFormValid = form.checkValidity() && 
+                               isPasswordValid && 
+                               isPasswordMatch && 
+                               validationState.username && 
+                               validationState.email;
+
+            console.log('Password Valid:', isPasswordValid);
+            console.log('Password Match:', isPasswordMatch);
+            console.log('Username Validated:', validationState.username);
+            console.log('Email Validated:', validationState.email);
+            console.log('Form Valid:', isFormValid);
+
+            submitButton.disabled = !isFormValid;
         }
 
-        // 서버로 회원가입 요청 보내기
-        const response = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username, email, password }),
+        // 유틸리티 함수들
+        function showValidationMessage(element, message, type) {
+            element.textContent = message;
+            element.className = `validation-message ${type}`;
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        // 유저네임 중복 확인
+        async function checkUsername() {
+            const username = document.getElementById('username').value;
+            const messageElement = document.getElementById('usernameMessage');
+            const inputElement = document.getElementById('username');
+            
+            if (!username) {
+                showValidationMessage(messageElement, '유저네임을 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/check-username', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showValidationMessage(messageElement, '사용 가능한 유저네임입니다.', 'success');
+                    inputElement.classList.add('input-validated');
+                    validationState.username = true;
+                } else {
+                    showValidationMessage(messageElement, data.error || '이미 사용 중인 유저네임입니다.', 'error');
+                    inputElement.classList.remove('input-validated');
+                    validationState.username = false;
+                }
+            } catch (error) {
+                showValidationMessage(messageElement, '중복 확인 중 오류가 발생했습니다.', 'error');
+                validationState.username = false;
+            }
+            validateForm();
+        }
+
+        // 이메일 중복 확인
+        async function checkEmail() {
+            const email = document.getElementById('email').value;
+            const messageElement = document.getElementById('emailMessage');
+            const inputElement = document.getElementById('email');
+            
+            if (!email) {
+                showValidationMessage(messageElement, '이메일을 입력해주세요.', 'error');
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                showValidationMessage(messageElement, '올바른 이메일 형식이 아닙니다.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/check-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showValidationMessage(messageElement, '사용 가능한 이메일입니다.', 'success');
+                    inputElement.classList.add('input-validated');
+                    validationState.email = true;
+                } else {
+                    showValidationMessage(messageElement, data.error || '이미 사용 중인 이메일입니다.', 'error');
+                    inputElement.classList.remove('input-validated');
+                    validationState.email = false;
+                }
+            } catch (error) {
+                showValidationMessage(messageElement, '중복 확인 중 오류가 발생했습니다.', 'error');
+                validationState.email = false;
+            }
+            validateForm();
+        }
+
+        // DOM 로드 완료 후 이벤트 리스너 등록
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('signupForm');
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirmPassword');
+
+            // 폼 제출 이벤트 핸들러 추가
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                
+                if (!validationState.username || !validationState.email) {
+                    alert('아이디와 이메일 중복확인을 완료해주세요.');
+                    return;
+                }
+
+                const username = document.getElementById('username').value;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                try {
+                    const response = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ username, email, password }),
+                    });
+
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        userEmail = email;
+                        document.getElementById('userEmailDisplay').textContent = email;
+                        document.getElementById('signupFormContainer').style.display = 'none';
+                        document.getElementById('verificationSection').style.display = 'block';
+                        startTimer(600); // 10분 타이머 시작
+                    } else {
+                        alert('회원가입 실패: ' + data.error);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('회원가입 중 오류가 발생했습니다.');
+                }
+            });
+
+            // 입력 필드 변경 감지
+            form.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', validateForm);
+            });
+
+            // 비밀번호 확인 필드 이벤트
+            confirmPassword.addEventListener('input', function() {
+                const messageElement = document.getElementById('passwordMatchMessage');
+                if (this.value === '') {
+                    messageElement.textContent = '';
+                    messageElement.className = 'password-match-message';
+                } else if (this.value === password.value) {
+                    messageElement.textContent = '비밀번호가 일치합니다';
+                    messageElement.className = 'password-match-message success';
+                } else {
+                    messageElement.textContent = '비밀번호가 일치하지 않습니다';
+                    messageElement.className = 'password-match-message error';
+                }
+                validateForm();
+            });
+
+            // 초기 버튼 상태 설정
+            document.getElementById('submitButton').disabled = true;
         });
 
-        // 서버 응답 처리
-        if (response.ok) {
-            // 회원가입 성공 시 login.html로 리디렉션
-            window.location.href = 'login.html';
-        } else {
-            const result = await response.json();
-            alert('Signup failed: ' + result.error);
-        }
-    });
+        async function verifyCode() {
+            const code = document.getElementById('verificationCode').value;
+            if (code.length !== 6 || !/^\d+$/.test(code)) {
+                alert('올바른 인증번호를 입력해주세요.');
+                return;
+            }
 
-    // Reset form
-    function resetForm() {
-        document.getElementById('signupForm').reset();
-        window.location.href = 'index.html';
-    }
-</script>
+            try {
+                const response = await fetch('/api/auth/verify-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        email: userEmail, 
+                        verificationCode: code 
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    clearInterval(timerInterval);
+                    alert('이메일 인증이 완료되었습니다.');
+                    window.location.href = 'login.html';
+                } else {
+                    alert('인증 실패: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('인증 처리 중 오류가 발생했습니다.');
+            }
+        }
+
+        async function resendVerificationCode() {
+            try {
+                const response = await fetch('/api/auth/resend-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: userEmail }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('인증번호가 재전송되었습니다.');
+                    startTimer(600); // 타이머 재시작
+                } else {
+                    alert('재전송 실패: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('재전송 중 오류가 발생했습니다.');
+            }
+        }
+
+        function startTimer(duration) {
+            let timer = duration;
+            const timerDisplay = document.getElementById('timer');
+            const resendButton = document.getElementById('resendButton');
+            
+            clearInterval(timerInterval);
+            resendButton.disabled = true;
+
+            timerInterval = setInterval(() => {
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+
+                timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                if (--timer < 0) {
+                    clearInterval(timerInterval);
+                    timerDisplay.textContent = '인증 시간이 만료되었습니다.';
+                    resendButton.disabled = false;
+                }
+            }, 1000);
+        }
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('signupForm').reset();
+            window.location.href = 'index.html';
+        }
+    </script>
 </body>
 </html>

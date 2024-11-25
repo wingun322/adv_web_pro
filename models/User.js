@@ -17,6 +17,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
+  verificationCode: String,
+  verificationCodeExpires: Date
 });
 
 // 비밀번호 해시화 함수 (회원가입 시 자동 실행)

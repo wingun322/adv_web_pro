@@ -64,7 +64,7 @@
 
                 if (response.ok) {
                     localStorage.removeItem('accessToken');
-                    showAuthLinks(); // 로그아웃 후 UI 갱신
+                    showAuthLinks(); // 로그아 ��� UI 갱신
                     updateCryptoList(); // 암호화폐 리스트도 갱신
                 } else {
                     console.error('Failed to logout');
@@ -80,13 +80,49 @@
             dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
         }
 
+        // 전역 상태 객체 수정 - 이전 정렬 방향을 모두 저장
+        const state = {
+            currentSort: localStorage.getItem('currentSort') || 'name',
+            sortDirection: JSON.parse(localStorage.getItem('sortDirection')) || {
+                name: true,
+                price: true,
+                changeAmount: true,
+                changeRate: true
+            },
+            previousDirections: JSON.parse(localStorage.getItem('previousDirections')) || {
+                name: true,
+                price: true,
+                changeAmount: true,
+                changeRate: true
+            },
+            cryptoData: [],
+            filteredData: [], // 검색 결과를 저장할 배열
+            searchTerm: '' // 현재 검색어를 저장
+        };
+
+        // 정렬 상태를 저장하는 함수 수정
+        function saveSortState() {
+            localStorage.setItem('currentSort', state.currentSort);
+            localStorage.setItem('sortDirection', JSON.stringify(state.sortDirection));
+            localStorage.setItem('previousDirections', JSON.stringify(state.previousDirections));
+        }
+
         // 암호화폐 데이터 가져오는 함수
         async function fetchCryptoData() {
             try {
                 const response = await fetch('http://localhost:5000/api/market');
                 if (response.ok) {
                     const data = await response.json();
-                    displayCryptoData(data);
+                    state.cryptoData = data;
+                    
+                    // 검색어가 있으면 필터링 먼저 수행
+                    if (state.searchTerm) {
+                        filterCryptoList();
+                    } else if (state.currentSort) {
+                        sortCryptoList(state.currentSort);
+                    } else {
+                        displayCryptoData(state.cryptoData);
+                    }
                 } else {
                     console.error('Failed to fetch cryptocurrency data');
                 }
@@ -102,26 +138,43 @@
 
             data.forEach(item => {
                 const listItem = document.createElement('li');
-                const marketName = document.createElement('span');
-                marketName.textContent = `${item.koreanName}`;
-                const price = document.createElement('span');
-                price.textContent = `${item.tradePrice} KRW`;
-                price.style.color = item.priceColor;
+                listItem.dataset.market = item.market;
+                listItem.dataset.tradePrice = item.tradePrice;
+                listItem.dataset.signedChangePrice = item.signedChangePrice;
+                listItem.dataset.signedChangeRate = item.signedChangeRate;
 
-                // 로그인 상태 확인 후 채팅방 링크 활성화
+                const marketName = document.createElement('span');
+                marketName.textContent = item.koreanName;
+
+                const priceInfo = document.createElement('span');
+                // 가격이 1보다 작을 때만 소수점 표시
+                const formattedPrice = item.tradePrice < 1 
+                    ? item.tradePrice.toFixed(8) 
+                    : Math.floor(item.tradePrice).toLocaleString();
+                
+                // 변화량과 변화율 계산
+                const changePrice = item.signedChangePrice.toFixed(2);
+                const changeRate = (item.signedChangeRate * 100).toFixed(2);
+                const sign = item.signedChangePrice >= 0 ? '+' : '';
+                
+                // 가격(변화율/변화액) 형식으로 표시
+                priceInfo.textContent = `${formattedPrice} KRW (${sign}${changeRate}%/${sign}${changePrice} KRW)`;
+                priceInfo.style.color = item.priceColor;
+
+                // 채팅방 링크 추가
                 const chatLink = document.createElement('a');
                 chatLink.href = '#';
                 chatLink.textContent = '입장';
-
+                
                 if (!localStorage.getItem('accessToken')) {
                     chatLink.style.color = 'gray';
                     chatLink.style.textDecoration = 'none';
                     chatLink.style.padding = '5px 10px';
                     chatLink.style.border = '1px solid gray';
                     chatLink.style.borderRadius = '5px';
-                    chatLink.addEventListener('click', function (event) {
+                    chatLink.addEventListener('click', function(event) {
                         event.preventDefault();
-                        const userConfirmed = confirm('로그인 후 이용 가능합니다. 로그인 페이지로 이동하시겠습니까?');
+                        const userConfirmed = confirm('로그인 후 이용 가능합니다. 로그인 페이지로 이동하시겠니까?');
                         if (userConfirmed) {
                             window.location.href = 'login.html';
                         }
@@ -132,20 +185,44 @@
                     chatLink.style.padding = '5px 10px';
                     chatLink.style.border = '1px solid blue';
                     chatLink.style.borderRadius = '5px';
-                    chatLink.href = `chat.html?cryptoId=${item.market}`; // 로그인된 경우 채팅방 링크 활성화
+                    chatLink.href = `chat.html?cryptoId=${item.market}`;
                 }
 
                 listItem.appendChild(chatLink);
                 listItem.appendChild(marketName);
-                listItem.appendChild(price);
+                listItem.appendChild(priceInfo);
                 cryptoList.appendChild(listItem);
             });
+        }
+
+        function toggleChangeInfo() {
+            const priceElements = document.querySelectorAll('#crypto-list li span:nth-of-type(2)'); // Adjusted selector
+            let showPrice = true;
+
+            setInterval(() => {
+                priceElements.forEach(price => {
+                    const parentLi = price.parentElement;
+                    if (showPrice) {
+                        price.textContent = parentLi.dataset.signedChangePrice + ' KRW'; // Ensure correct parent element
+                    } else {
+                        price.textContent = parentLi.dataset.signedChangeRate + ' %'; // Ensure correct parent element
+                    }
+                });
+                showPrice = !showPrice; // Toggle display
+            }, 5000); // Every 5 seconds
         }
 
         // 자동 새로 고침 함수
         function startAutoRefresh() {
             fetchCryptoData(); // 초기 데이터 가져오기
-            setInterval(fetchCryptoData, 10000); // 10초마다 자동 갱신
+            setInterval(() => {
+                if (!state.isFetching) {
+                    state.isFetching = true;
+                    fetchCryptoData().finally(() => {
+                        state.isFetching = false;
+                    });
+                }
+            }, 10000);
         }
 
         // 페이지가 새로 로드될 때마다 로그인 상태 확인
@@ -155,7 +232,7 @@
             }
         });
 
-        // 페이지 로드 시 로그인 상태 확인 및 데이터 갱신
+        // 페이지 로드 시 로그 상태 확인 및 이터 갱신
         window.onload = function() {
             checkLoginStatus();
             startAutoRefresh();
@@ -166,6 +243,157 @@
             fetchCryptoData(); // 암호화폐 리스트 새로고침
         }
 
+        // 검색 필터링 함수
+        function filterCryptoList() {
+            const searchInput = document.getElementById('search-bar').value.toLowerCase();
+            state.searchTerm = searchInput;
+            
+            // 검색어로 데이터 필터링
+            state.filteredData = state.cryptoData.filter(item => 
+                item.koreanName.toLowerCase().includes(searchInput)
+            );
+            
+            // 현재 정렬 상태 유지하면서 필터링된 데이터 표시
+            if (state.currentSort) {
+                sortCryptoList(state.currentSort, true);
+            } else {
+                displayCryptoData(state.filteredData);
+            }
+        }
+
+        // 정렬 함수
+        function sortCryptoList(criteria, isFiltered = false) {
+            const dataToSort = isFiltered || state.searchTerm 
+                ? state.filteredData 
+                : state.cryptoData;
+
+            const sortFunctions = {
+                name: (a, b) => state.sortDirection.name 
+                    ? a.koreanName.localeCompare(b.koreanName)
+                    : b.koreanName.localeCompare(a.koreanName),
+                price: (a, b) => state.sortDirection.price
+                    ? a.tradePrice - b.tradePrice
+                    : b.tradePrice - a.tradePrice,
+                changeAmount: (a, b) => state.sortDirection.changeAmount
+                    ? a.signedChangePrice - b.signedChangePrice
+                    : b.signedChangePrice - a.signedChangePrice,
+                changeRate: (a, b) => state.sortDirection.changeRate
+                    ? a.signedChangeRate - b.signedChangeRate
+                    : b.signedChangeRate - a.signedChangeRate
+            };
+
+            dataToSort.sort(sortFunctions[criteria]);
+            displayCryptoData(dataToSort);
+            updateSortButtons();
+        }
+
+        // 정렬 상태 표시 함수 추가
+        function updateSortButtons() {
+            document.querySelectorAll('.sort-btn').forEach(button => {
+                button.classList.remove('active');
+                const arrow = button.querySelector('.arrow');
+                if (arrow) arrow.remove();
+            });
+
+            const activeButton = document.getElementById(`sort-by-${state.currentSort}`);
+            if (activeButton) {
+                activeButton.classList.add('active');
+                const arrow = document.createElement('span');
+                arrow.classList.add('arrow');
+                arrow.classList.add(state.sortDirection[state.currentSort] ? 'arrow-up' : 'arrow-down');
+                activeButton.appendChild(arrow);
+            }
+        }
+
+        // Ensure the DOM is fully loaded before running the script
+        document.addEventListener('DOMContentLoaded', function() {
+            // 이벤트 리스너 설정
+            document.getElementById('sort-by-name').addEventListener('click', () => toggleSort('name'));
+            document.getElementById('sort-by-price').addEventListener('click', () => toggleSort('price'));
+            document.getElementById('sort-by-changeAmount').addEventListener('click', () => toggleSort('changeAmount'));
+            document.getElementById('sort-by-changeRate').addEventListener('click', () => toggleSort('changeRate'));
+
+            // 초기 데이터 로드 시 저장된 정렬 상태 적용
+            fetchCryptoData().then(() => {
+                if (state.currentSort) {
+                    sortCryptoList(state.currentSort);
+                    updateSortButtons(); // 정렬 버튼 상태 업데이트
+                }
+            });
+        });
+
+        // toggleSort 함수 수정
+        function toggleSort(criteria) {
+            if (state.currentSort === criteria) {
+                // 같은 기준으로 정렬할 때는 방향만 토글
+                state.sortDirection[criteria] = !state.sortDirection[criteria];
+                state.previousDirections[criteria] = state.sortDirection[criteria];
+            } else {
+                // 다른 기준으로 정렬할 때는 이전 방향을 복원
+                state.currentSort = criteria;
+                state.sortDirection[criteria] = state.previousDirections[criteria];
+            }
+            saveSortState();
+            sortCryptoList(criteria);
+        }
+
+        function createCryptoListItem(crypto) {
+            const listItem = document.createElement('li');
+            listItem.dataset.market = crypto.market;
+            listItem.dataset.tradePrice = crypto.tradePrice;
+            listItem.dataset.signedChangePrice = crypto.signedChangePrice;
+            listItem.dataset.signedChangeRate = crypto.signedChangeRate;
+
+            const marketName = document.createElement('span');
+            marketName.textContent = crypto.koreanName;
+            
+            const priceInfo = document.createElement('span');
+            // 가격이 1보다 작을 때만 소수점 표시
+            const formattedPrice = crypto.tradePrice < 1 
+                ? crypto.tradePrice.toFixed(8) 
+                : Math.floor(crypto.tradePrice);
+            
+            // 변화량과 변화율 계산
+            const changePrice = parseFloat(crypto.signedChangePrice).toFixed(2);
+            const changeRate = (crypto.signedChangeRate * 100).toFixed(2);
+            
+            // 가격(변화율/변화액) 형식으로 표시
+            priceInfo.textContent = `${formattedPrice} KRW (${changeRate}%/${changePrice} KRW)`;
+            priceInfo.style.color = crypto.priceColor;
+
+            // 채팅방 링크 추가
+            const chatLink = document.createElement('a');
+            chatLink.href = '#';
+            chatLink.textContent = '입장';
+            
+            if (!localStorage.getItem('accessToken')) {
+                chatLink.style.color = 'gray';
+                chatLink.style.textDecoration = 'none';
+                chatLink.style.padding = '5px 10px';
+                chatLink.style.border = '1px solid gray';
+                chatLink.style.borderRadius = '5px';
+                chatLink.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const userConfirmed = confirm('로그인 후 용 가능합니다. 로그인 페이지로 이동하시겠습니까?');
+                    if (userConfirmed) {
+                        window.location.href = 'login.html';
+                    }
+                });
+            } else {
+                chatLink.style.color = 'blue';
+                chatLink.style.textDecoration = 'none';
+                chatLink.style.padding = '5px 10px';
+                chatLink.style.border = '1px solid blue';
+                chatLink.style.borderRadius = '5px';
+                chatLink.href = `chat.html?cryptoId=${crypto.market}`;
+            }
+
+            listItem.appendChild(chatLink);
+            listItem.appendChild(marketName);
+            listItem.appendChild(priceInfo);
+            
+            return listItem;
+        }
     </script>
 </head>
 <body>
@@ -191,6 +419,19 @@
     <div class="container">
         <section id="crypto-info-section">
             <h2>현재 암호화폐 가격</h2>
+            <input
+                    type="text"
+                    id="search-bar"
+                    placeholder="검색어를 입력하세요..."
+                    oninput="filterCryptoList()"
+                    style="margin-bottom: 10px; padding: 8px; width: 100%; border: 1px solid #ccc; border-radius: 5px;"
+            >
+            <div>
+                <button id="sort-by-name" class="sort-btn">이름순</button>
+                <button id="sort-by-price" class="sort-btn">가격순</button>
+                <button id="sort-by-changeAmount" class="sort-btn">변화액순</button>
+                <button id="sort-by-changeRate" class="sort-btn">변화율순</button>
+            </div>
             <ul id="crypto-list"></ul>
         </section>
     </div>
