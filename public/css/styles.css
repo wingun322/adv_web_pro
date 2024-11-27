@@ -603,3 +603,74 @@ button:disabled {
     background-position: right calc(0.375em + 0.1875rem) center;
     background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
+
+/* 사용자 정보 섹션 세로 정렬 */
+#user-info {
+    display: flex;
+    flex-direction: column; /* 세로 정렬 */
+    align-items: flex-start; /* 왼쪽 정렬 */
+}
+
+/* 각 사용자 정보 항목 간격 추가 */
+#user-info p {
+    margin-bottom: 15px; /* 항목 간 간격을 늘림 */
+}
+
+.message {
+    margin: 8px;
+    max-width: 70%;
+    display: flex;
+    flex-direction: column;
+}
+
+.sender-name {
+    font-size: 0.9em;
+    margin-bottom: 4px;
+    color: black;
+}
+
+.message-bubble {
+    padding: 8px 12px;
+    border-radius: 12px;
+    position: relative;
+}
+
+.message-text {
+    word-break: break-word;
+}
+
+.message-time {
+    font-size: 0.7em;
+    margin-top: 4px;
+    display: block;
+}
+
+.user-message {
+    align-self: flex-end;
+}
+
+.user-message .message-bubble {
+    background-color: #007bff;
+    color: black;
+}
+
+.user-message .message-time {
+    color: black;
+}
+
+.user-message .sender-name {
+    align-self: flex-end;
+}
+
+.other-message {
+    align-self: flex-start;
+}
+
+.other-message .message-bubble {
+    background-color: #e9ecef;
+    color: black;
+}
+
+.other-message .message-time {
+    color: black;
+}

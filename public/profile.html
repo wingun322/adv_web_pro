@@ -3,59 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile</title>
+    <title>Profile</title>
     <link rel="stylesheet" href="css/styles.css">
-
-    <script>
-        async function loadUserInfo() {
-            const token = localStorage.getItem('accessToken');
-
-            if (token) {
-                try {
-                    const response = await fetch('http://localhost:5000/api/auth/user', {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': 'Bearer ' + token
-                        }
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        displayUserInfo(data.user);
-                    } else {
-                        alert("Failed to load user information.");
-                        window.location.href = "login.html"; // Redirect to login page if not authenticated
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert("Error loading user information.");
-                    window.location.href = "login.html"; // Redirect to login page if there's an error
-                }
-            } else {
-                window.location.href = "login.html"; // Redirect to login page if no token is found
-            }
-        }
-
-        function displayUserInfo(user) {
-            document.getElementById('username1').innerText = user.username;
-            document.getElementById('email').innerText = user.email;
-        }
-
-        window.onload = loadUserInfo;
-    </script>
 </head>
 <body>
     <header>
-        <a href="index.html" style="text-decoration: none;">
-            <h1 class="logo">Bit Chat</h1>
-        </a>
-        <nav>
-        </nav>
+        <a href="index.html" class="logo">Bit Chat</a>
     </header>
     <main>
-        <p>Here is your profile information:</p>
-        <p><strong>Username:</strong> <span id="username1"></span></p>
-        <p><strong>Email:</strong> <span id="email"></span></p>
+        <div id="user-info">
+            <h2>User Information</h2>
+            <p>Username: <span id="username-display"></span> <button id="edit-username">Edit</button></p>
+            <div id="username-edit" style="display: none;">
+                <input type="text" id="username-input" required>
+                <button id="update-username">Update</button>
+                <small id="usernameMessage" class="validation-message"></small>
+            </div>
+            <p>Email: <span id="email-display"></span> <button id="edit-email">Edit</button></p>
+            <div id="email-edit" style="display: none;">
+                <div class="input-group">
+                    <input type="email" id="email-input" required>
+                    <button type="button" class="check-button" onclick="sendVerificationCode()">Send Verification Code</button>
+                </div>
+                <small id="emailMessage" class="validation-message"></small>
+                <div id="verification-section" style="display: none;">
+                    <input type="text" id="verification-code" placeholder="Enter verification code" required>
+                    <button type="button" onclick="verifyEmailCode()">Verify Code</button>
+                    <small id="verificationMessage" class="validation-message"></small>
+                </div>
+                <button id="update-email" style="display: none;">Update Email</button>
+                <small id="emailUpdateMessage" class="validation-message"></small>
+            </div>
+            <h2>Change Password</h2>
+            <div id="password-edit">
+                <div class="input-group">
+                    <input type="password" id="new-password" placeholder="New Password" required>
+                    <small class="password-hint">8 characters minimum, include letters, numbers, and special characters</small>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="confirm-new-password" placeholder="Confirm New Password" required>
+                    <small id="passwordMatchMessage" class="password-match-message"></small>
+                </div>
+                <button id="update-password">Update Password</button>
+                <small id="passwordUpdateMessage" class="validation-message"></small>
+            </div>
+        </div>
+        <div id="message"></div>
     </main>
+    <script>
+        async function loadUserInfo() {
+            const response = await fetch('/api/auth/user', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                }
+            });
+            const data = await response.json();
+            document.getElementById('username-display').innerText = data.user.username;
+            document.getElementById('email-display').innerText = data.user.email;
+        }
+
+        document.getElementById('edit-username').addEventListener('click', () => {
+            document.getElementById('username-edit').style.display = 'block';
+            document.getElementById('username-input').value = document.getElementById('username-display').innerText;
+        });
+
+        document.getElementById('update-username').addEventListener('click', async () => {
+            const username = document.getElementById('username-input').value;
+            const response = await fetch('/api/auth/update', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                },
+                body: JSON.stringify({ username })
+            });
+            const data = await response.json();
+            const messageElement = document.getElementById('usernameMessage');
+            messageElement.innerText = data.message || data.error;
+            if (response.ok) {
+                document.getElementById('username-display').innerText = username;
+                document.getElementById('username-edit').style.display = 'none';
+            }
+        });
+
+        document.getElementById('edit-email').addEventListener('click', () => {
+            document.getElementById('email-edit').style.display = 'block';
+            document.getElementById('email-input').value = document.getElementById('email-display').innerText;
+        });
+
+        async function sendVerificationCode() {
+            const email = document.getElementById('email-input').value;
+            const messageElement = document.getElementById('emailMessage');
+            if (!email) {
+                showValidationMessage(messageElement, 'Please enter an email.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/send-verification-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email }),
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showValidationMessage(messageElement, 'Verification code sent to your email.', 'success');
+                    document.getElementById('verification-section').style.display = 'block';
+                } else {
+                    showValidationMessage(messageElement, data.error || 'Failed to send verification code.', 'error');
+                }
+            } catch (error) {
+                showValidationMessage(messageElement, 'Error sending verification code.', 'error');
+            }
+        }
+
+        async function verifyEmailCode() {
+            const email = document.getElementById('email-input').value;
+            const code = document.getElementById('verification-code').value;
+            const messageElement = document.getElementById('verificationMessage');
+
+            try {
+                const response = await fetch('/api/auth/verify-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, code }),
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showValidationMessage(messageElement, 'Email verified successfully. You can now update your email.', 'success');
+                    document.getElementById('update-email').style.display = 'block';
+                } else {
+                    showValidationMessage(messageElement, data.error || 'Verification failed.', 'error');
+                }
+            } catch (error) {
+                showValidationMessage(messageElement, 'Error verifying code.', 'error');
+            }
+        }
+
+        document.getElementById('update-email').addEventListener('click', async () => {
+            const email = document.getElementById('email-input').value;
+            const response = await fetch('/api/auth/update', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                },
+                body: JSON.stringify({ email })
+            });
+            const data = await response.json();
+            const messageElement = document.getElementById('emailUpdateMessage');
+            messageElement.innerText = data.message || data.error;
+            if (response.ok) {
+                document.getElementById('email-display').innerText = email;
+                document.getElementById('email-edit').style.display = 'none';
+            }
+        });
+
+        document.getElementById('update-password').addEventListener('click', async () => {
+            const newPassword = document.getElementById('new-password').value;
+            const confirmNewPassword = document.getElementById('confirm-new-password').value;
+
+            if (newPassword !== confirmNewPassword) {
+                document.getElementById('passwordMatchMessage').innerText = "Passwords do not match.";
+                return;
+            }
+
+            if (!isValidPassword(newPassword)) {
+                document.getElementById('passwordMatchMessage').innerText = "Password must be at least 8 characters long and include letters, numbers, and special characters.";
+                return;
+            }
+
+            const response = await fetch('/api/auth/update-password', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                },
+                body: JSON.stringify({ password: newPassword })
+            });
+            const data = await response.json();
+            const messageElement = document.getElementById('passwordUpdateMessage');
+            messageElement.innerText = data.message || data.error;
+        });
+
+        function isValidPassword(password) {
+            const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+            return passwordPattern.test(password);
+        }
+
+        // Load user info on page load
+        window.onload = loadUserInfo;
+
+        function showValidationMessage(element, message, type) {
+            element.textContent = message;
+            element.className = `validation-message ${type}`;
+        }
+    </script>
 </body>
 </html>

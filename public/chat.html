@@ -77,15 +77,21 @@
     function displayMessage({ username: sender, text, time }) {
       const chatBox = document.getElementById("chat-box");
       const messageElement = document.createElement("div");
-      const messageTime = new Date(time).toLocaleTimeString();
+      const messageTime = new Date(time).toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
 
-      messageElement.classList.add(sender === username ? "user-message" : "other-message");
+      messageElement.classList.add('message', sender === username ? "user-message" : "other-message");
       messageElement.innerHTML = `
-        <span class="message-time">[${messageTime}]</span>
-        <strong>${sender}:</strong> ${text}`;
+        <strong class="sender-name">${sender}</strong>
+        <div class="message-bubble">
+          <span class="message-text">${text}</span>
+          <span class="message-time">${messageTime}</span>
+        </div>
+      `;
+      
       chatBox.appendChild(messageElement);
-
-      // 스크롤을 최신 메시지로
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 

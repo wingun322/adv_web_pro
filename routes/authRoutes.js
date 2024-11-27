@@ -14,5 +14,8 @@ router.post("/verify-code", authController.verifyCode);
 router.post("/resend-code", authController.resendVerificationCode);
 router.post("/check-username", authController.checkUsername);
 router.post("/check-email", authController.checkEmail);
+router.put("/update", authMiddleware, authController.updateUserInfo);
+router.put("/update-password", authMiddleware, authController.updatePassword);
+router.post('/send-verification-code', authController.sendVerificationCode);
 
 module.exports = router;

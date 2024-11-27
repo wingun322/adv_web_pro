@@ -2,6 +2,9 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const crypto = require('crypto');
 const { sendVerificationCode } = require('../utils/emailService');
+const bcrypt = require('bcryptjs');
+const { getChatModel } = require("../models/Chat");
+const mongoose = require('mongoose');
 
 // Token generation functions
 const generateAccessToken = (userId) => {
@@ -86,19 +89,15 @@ exports.login = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: "User not found" });
-
     if (!user.isVerified) {
       return res.status(400).json({ 
         error: "Please verify your email before logging in." 
       });
     }
-
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(400).json({ error: "Incorrect password" });
-
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
-
     res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "strict" });
     res.json({ message: "Login successful", accessToken });
   } catch (error) {
@@ -141,21 +140,19 @@ exports.getUserInfo = async (req, res) => {
 
 // 인증 코드 확인
 exports.verifyCode = async (req, res) => {
-  const { email, verificationCode } = req.body;
-  
+  const { email, code } = req.body;
   try {
     const user = await User.findOne({
       email,
-      verificationCode,
+      verificationCode: code,
       verificationCodeExpires: { $gt: Date.now() }
     });
 
     if (!user) {
-      return res.status(400).json({ error: "잘못된 인증 코드이거나 만료되었습니다." });
+      return res.status(400).json({ error: "유효하지 않거나 만료된 인증 코드입니다." });
     }
 
-    // 인증 완료 처리
-    user.isVerified = true;
+    // 인증 성공 시 처리
     user.verificationCode = undefined;
     user.verificationCodeExpires = undefined;
     await user.save();
@@ -220,5 +217,133 @@ exports.checkEmail = async (req, res) => {
         res.json({ message: "사용 가능한 이메일입니다." });
     } catch (error) {
         res.status(500).json({ error: "서버 오류가 발생했습니다." });
+    }
+};
+
+// 회원 정보 수정
+exports.updateUserInfo = async (req, res) => {
+    const { username, email } = req.body;
+    const userId = req.user.id;
+
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        if (username) {
+            const existingUsername = await User.findOne({ 
+                username, 
+                _id: { $ne: userId } 
+            });
+            
+            if (existingUsername) {
+                return res.status(400).json({ error: "Username already in use." });
+            }
+
+            // 모든 채팅방 컬렉션 가져오기
+            const collections = await mongoose.connection.db.listCollections().toArray();
+            const cryptoIds = collections
+                .map(col => col.name)
+                .filter(name => name !== 'users'); // users 컬렉션 제외
+
+            // 각 채팅방의 메시지 업데이트
+            for (const cryptoId of cryptoIds) {
+                const Chat = getChatModel(cryptoId);
+                await Chat.updateMany(
+                    { username: user.username },
+                    { $set: { username: username } }
+                );
+            }
+            
+            user.username = username;
+        }
+
+        if (email) {
+            const existingEmail = await User.findOne({ 
+                email,
+                _id: { $ne: userId } 
+            });
+            
+            if (existingEmail) {
+                return res.status(400).json({ error: "Email already in use." });
+            }
+            user.email = email;
+        }
+
+        await user.save();
+        res.json({ message: "User information updated successfully." });
+    } catch (error) {
+        console.error("Error updating user info:", error);
+        res.status(500).json({ error: "Failed to update user information: " + error.message });
+    }
+};
+
+// 비밀번호 수정
+exports.updatePassword = async (req, res) => {
+    const { password } = req.body;
+    const userId = req.user.id; // authMiddleware에서 설정한 사용자 ID
+
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        // 비밀번호 해싱
+        user.password = await bcrypt.hash(password, 10);
+        await user.save();
+
+        res.json({ message: "Password updated successfully." });
+    } catch (error) {
+        console.error("Error updating password:", error);
+        res.status(500).json({ error: "Failed to update password: " + error.message });
+    }
+};
+
+// Send verification code
+exports.sendVerificationCode = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        // Check if the user exists
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        // Generate a verification code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Save the verification code and its expiration time
+        user.verificationCode = verificationCode;
+        user.verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10분 후 만료
+        await user.save();
+
+        // Send verification code using emailService
+        await sendVerificationCode(email, verificationCode);
+
+        res.json({ message: "인증번호가 이메일로 전송되었습니다." });
+    } catch (error) {
+        console.error("Error sending verification code:", error);
+        res.status(500).json({ error: "인증번호 전송에 실패했습니다: " + error.message });
+    }
+};
+
+exports.getMessagesByCryptoId = async (req, res) => {
+    const { cryptoId } = req.params;
+    console.log("Received cryptoId:", cryptoId);
+
+    try {
+        // 해당 cryptoId로 컬렉션 가져오기
+        const Chat = getChatModel(cryptoId);
+
+        // 채팅방의 메시지 가져오기
+        const messages = await Chat.find({});
+
+        res.json({ messages });
+    } catch (error) {
+        console.error("Error getting messages:", error);
+        res.status(500).json({ error: "Failed to get messages: " + error.message });
     }
 };
