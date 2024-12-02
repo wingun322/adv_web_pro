@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Management</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/notifications.js"></script>
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo">Bit Chat</a>
+    </header>
+    <main>
+        <div id="chat-list" class="chat-list"></div>
+        <div id="message-list" class="message-list" style="display: none;">
+            <h3>Messages in <span id="current-chat-room"></span></h3>
+            <div id="messages" class="messages"></div>
+            <button class="delete-button" onclick="deleteChat()">Delete Chat Room</button>
+        </div>
+    </main>
+    <script>
+        async function loadChats() {
+            const response = await fetch('/api/admin/chats', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                }
+            });
+            const data = await response.json();
+            const chatList = document.getElementById('chat-list');
+            chatList.innerHTML = '';
+
+            data.chats.forEach(chat => {
+                const chatItem = document.createElement('div');
+                chatItem.className = 'chat-item';
+                chatItem.innerHTML = `<button onclick="loadMessages('${chat}')">${chat}</button>`;
+                chatList.appendChild(chatItem);
+            });
+        }
+
+        async function loadMessages(chatId) {
+            const response = await fetch(`/api/chat/messages/${chatId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                }
+            });
+            const data = await response.json();
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
+            document.getElementById('current-chat-room').innerText = chatId;
+            document.getElementById('message-list').style.display = 'block';
+
+            data.messages.forEach(message => {
+                const messageItem = document.createElement('div');
+                messageItem.className = 'message-item';
+                messageItem.innerHTML = `
+                    <p>${message.username}: ${message.text} 
+                    <button class="delete-button" onclick="deleteMessage('${message._id}', '${chatId}')">Delete</button></p>
+                `;
+                messagesDiv.appendChild(messageItem);
+            });
+        }
+
+        async function deleteChat() {
+            const chatId = document.getElementById('current-chat-room').innerText;
+            const response = await fetch(`/api/admin/chats/${chatId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                }
+            });
+            if (response.ok) {
+                alert('Chat room deleted successfully');
+                document.getElementById('message-list').style.display = 'none';
+                loadChats(); // Reload chat rooms
+            } else {
+                alert('Failed to delete chat room');
+            }
+        }
+
+        async function deleteMessage(messageId, chatId) {
+            const response = await fetch(`/api/chat/messages/${chatId}/${messageId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                }
+            });
+            if (response.ok) {
+                alert('Message deleted successfully');
+                loadMessages(chatId); // Reload messages to reflect the deletion
+            } else {
+                alert('Failed to delete message');
+            }
+        }
+
+        // Load chats on page load
+        window.onload = loadChats;
+    </script>
+    <style>
+        .chat-list, .message-list {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .chat-item, .message-item {
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+        .message-list h3 {
+            margin-top: 0; /* Remove margin for better alignment */
+        }
+    </style>
+</body>
+</html>

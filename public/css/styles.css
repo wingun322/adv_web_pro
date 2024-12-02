@@ -268,6 +268,9 @@ input[type="password"] {
     margin-right: 10px;
     outline: none;
     transition: border-color 0.3s ease;
+    min-height: 44px;
+    max-height: 150px;
+    overflow-y: auto;
 }
 
 #message-input:focus {
@@ -673,4 +676,87 @@ button:disabled {
 
 .other-message .message-time {
     color: black;
+}
+
+/* 즐겨찾기 버튼 스타일 */
+#crypto-list button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-bottom: 10px; /* 버튼 간 간격 추가 */
+}
+
+#crypto-list button:hover {
+    background-color: #0056b3;
+}
+
+.filter-buttons {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    margin: 0 5px;
+    border: 2px solid #007bff;
+    background-color: white;
+    color: #007bff;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-btn.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.filter-btn:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    color: white;
+}
+
+.notification-button {
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.notification-button.active {
+    background-color: #28a745;
+}
+
+.notification-button:hover {
+    opacity: 0.8;
+}
+
+/* 입장 버튼 스타일 */
+.chat-link {
+    background-color: #007bff;
+    color: white !important;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin: 10px 0;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.chat-link:hover {
+    background-color: #0056b3;
+}
+
+.chat-link.disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
 }

@@ -1,10 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { getMessagesByCryptoId, saveMessage } = require("../controllers/chatController");
-const authMiddleware = require(".././middlewares/authMiddleware");
+const chatController = require('../controllers/chatController');
+const authMiddleware = require('../middlewares/authMiddleware');
 
-// 채팅방에 해당하는 메시지를 가져오는 라우트
-router.get("/messages/:cryptoId", getMessagesByCryptoId);
-router.post("/messages", authMiddleware, saveMessage);
+// 채팅 메시지 관련 라우트
+router.get('/messages/:cryptoId', authMiddleware, chatController.getMessagesByCryptoId);
+router.post('/messages/:cryptoId', authMiddleware, chatController.saveMessage);
+router.delete('/messages/:cryptoId/:messageId', authMiddleware, chatController.deleteMessage);
 
 module.exports = router;
