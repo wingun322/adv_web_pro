@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/notifications.js"></script>
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo">Bit Chat</a>
+    </header>
+    <main>
+        <div class="user-list-container">
+            <div id="user-list" class="user-list"></div>
+        </div>
+    </main>
+    <script>
+        async function loadUsers() {
+            const response = await fetch('/api/admin/users', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                }
+            });
+            const data = await response.json();
+            const userList = document.getElementById('user-list');
+            userList.innerHTML = '';
+
+            data.users.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.innerHTML = `
+                    <p>${user.username} (${user.email}) 
+                    <button class="delete-button" onclick="deleteUser('${user._id}')">Delete</button></p>
+                `;
+                userList.appendChild(userItem);
+            });
+        }
+
+        async function deleteUser(userId) {
+            const response = await fetch(`/api/admin/users/${userId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                }
+            });
+            if (response.ok) {
+                alert('User deleted successfully');
+                loadUsers(); // Reload users
+            } else {
+                alert('Failed to delete user');
+            }
+        }
+
+        // Load users on page load
+        window.onload = loadUsers;
+    </script>
+    <style>
+        .user-list {
+            margin-top: 10px; /* Space above the user list items */
+        }
+        .user-item {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</body>
+</html>
