@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 // 유저 스키마 정의
 const userSchema = new mongoose.Schema({
@@ -17,6 +17,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
+  verificationCode: String,
+  verificationCodeExpires: Date
 });
 
 // 비밀번호 해시화 함수 (회원가입 시 자동 실행)

@@ -1,8 +1,10 @@
 /* 전체 페이지 스타일 */
-body {
+html, body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    overflow-x: hidden; /* 좌우 스크롤을 숨김 */
+    height: 100%;  /* 전체 화면 높이를 설정 */
 }
 
 header {
@@ -19,12 +21,78 @@ h1 {
 }
 
 main {
-    flex: 1;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: center;  /* 수평 중앙 정렬 */
+    align-items: flex-start;  /* 상단 정렬 */
     padding: 20px;
-    min-height: 100vh;
+    min-height: 100vh;  /* 화면 높이 100% */
+    width: 100%;
+    height: 100%;  /* 부모 요소에 맞게 높이 설정 */
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;  /* 최대 너비를 1200px로 설정 */
+    margin: 0 auto;  /* 수평 중앙 정렬 */
+}
+
+/* 암호화폐 정보 섹션 스타일 */
+#crypto-info-section {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* 암호화폐 리스트 스타일 */
+#crypto-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* 각 항목의 최소 너비를 300px로 설정 */
+    gap: 20px; /* 항목 간 간격을 늘림 */
+}
+
+/* 각 암호화폐 항목 카드 스타일 */
+#crypto-list li {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* 호버 효과 */
+#crypto-list li:hover {
+    background-color: #f1f1f1;
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 암호화폐 이름과 가격 스타일 */
+#crypto-list li span {
+    display: block;
+    font-size: 18px;
+    color: #444;
+    margin-bottom: 10px;
+}
+
+#crypto-list li .market-name {
+    font-weight: bold;
+    font-size: 20px;
+}
+
+#crypto-list li .price {
+    font-size: 22px;
+    font-weight: bold;
+    color: #007bff;
 }
 
 /* 오른쪽 정렬 스타일 */
@@ -93,7 +161,7 @@ main {
     font-size: 18px;
     border-radius: 5px;
     cursor: pointer;
-    width: 45%;;
+    width: 45%;
 }
 
 .button-group button:first-child {
@@ -147,67 +215,462 @@ input[type="password"] {
     text-decoration: none;
 }
 
-/* 암호화폐 정보 섹션 스타일 */
-#crypto-info-section {
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #fff;
+/* 채팅박스 스타일 */
+#chat-box {
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #f9f9f9;
     border-radius: 8px;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* 채팅 메시지 스타일 */
+#chat-box div {
+    background-color: #f1f1f1;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    word-wrap: break-word;
+    max-width: 80%;
+}
+
+/* 사용자 메시지 스타일 */
+#chat-box .user-message {
+    background-color: #007bff;
+    color: white;
+    align-self: flex-end;
+    border-radius: 10px;
+    padding: 8px 15px;
+}
+
+/* 다른 사용자 메시지 스타일 */
+#chat-box .other-message {
+    background-color: #e0e0e0;
+    color: #333;
+    align-self: flex-start;
+    border-radius: 10px;
+    padding: 8px 15px;
+}
+
+/* 입력창 스타일 */
+#message-input {
+    width: calc(100% - 100px);
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    margin-right: 10px;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+#message-input:focus {
+    border-color: #007bff;
+}
+
+/* 전송 버튼 스타일 */
+button {
+    padding: 12px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* 버튼 비활성화 스타일 */
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* 전체 페이지 레이아웃 */
+header .logo {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #f32f2f;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-style: italic;
+    background: linear-gradient(90deg, #b71c1c, #d32f2f); /* Add gradient */
+    -webkit-background-clip: text; /* Clip background to text */
+    -webkit-text-fill-color: transparent; /* Make text color transparent to show gradient */
+}
+
+/* 채팅 입력창 및 버튼 그룹 스타일 */
+#message-input, button {
+    margin: 5px 0;
+}
+
+/* 메시지 스타일링 */
+.user-message {
+    background-color: #d3f8e2; /* 사용자 메시지 배경색 */
+    text-align: right; /* 우측 정렬 */
+    padding: 8px;
+    margin: 5px;
+    border-radius: 5px;
+}
+
+.other-message {
+    background-color: #f1f1f1; /* 다른 사용자 메시지 배경색 */
+    text-align: left; /* 좌측 정렬 */
+    padding: 8px;
+    margin: 5px;
+    border-radius: 5px;
+}
+
+.message-input-container {
+    display: flex; /* 플렉스 박스로 배치 */
+    align-items: center; /* 세로 정렬 중앙 */
+    gap: 10px; /* 입력창과 버튼 사이 간격 */
+    margin-top: 10px; /* 위쪽에 여백 추가 */
+}
+
+.active { font-weight: bold; }
+#chart-section { display: none; }
+.triangle-up::after { content: "▲"; color: green; }
+.triangle-down::after { content: "▼"; color: red; }
+.triangle-neutral::after { content: "━"; color: gray; }
+.sort-btn {
+    margin: 5px;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f5f5f5;
+    cursor: pointer;
+    color: #333333;
+    position: relative;
+    padding-right: 25px;  /* 화살표를 위한 공간 */
+}
+
+.sort-btn.active {
+    background-color: #e0e0e0;
+    font-weight: bold;
+}
+
+.arrow {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.arrow-up::after {
+    content: "▲";
+}
+
+.arrow-down::after {
+    content: "▼";
+}
+
+/* 로딩 스피너 스타일 */
+#loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 이메일 인증 섹션 스타일 */
+.verification-section {
+    display: none;
+    margin-top: 30px;
+    padding: 30px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     text-align: center;
 }
 
-#crypto-info-section h2 {
+.verification-section h3 {
+    color: #2c3e50;
     font-size: 24px;
-    color: #333;
     margin-bottom: 20px;
-    font-weight: 600;
 }
 
-/* 암호화폐 리스트 스타일 */
-#crypto-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
+.verification-section p {
+    color: #666;
+    margin-bottom: 25px;
+    line-height: 1.5;
 }
 
-/* 각 암호화폐 항목 카드 스타일 */
-#crypto-list li {
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    background-color: #f9f9f9;
+#userEmailDisplay {
+    color: #007bff;
+    font-weight: bold;
+}
+
+.verification-code-input {
+    width: 200px;
+    padding: 15px;
+    font-size: 20px;
+    letter-spacing: 8px;
+    text-align: center;
+    margin: 0 auto 20px;
+    border: 2px solid #ddd;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: border-color 0.3s ease;
+}
+
+.verification-code-input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.verify-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 16px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.verify-button:hover {
+    background-color: #218838;
+    transform: translateY(-2px);
+}
+
+.timer {
+    color: #dc3545;
+    font-size: 18px;
+    font-weight: bold;
+    margin: 15px 0;
+}
+
+.resend-button {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.8;
+}
+
+.resend-button:hover:not(:disabled) {
+    background-color: #5a6268;
+    opacity: 1;
+}
+
+.resend-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.input-group {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
     transition: all 0.3s ease;
 }
 
-#crypto-list li:hover {
-    background-color: #f1f1f1;
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+.input-group input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
 }
 
-/* 암호화폐 이름과 가격 스타일 */
-#crypto-list li span {
+.password-hint {
     display: block;
-    font-size: 18px;
-    color: #444;
-    margin-bottom: 10px;
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
 }
 
-#crypto-list li .market-name {
-    font-weight: bold;
-    font-size: 20px;
+.password-match-message {
+    display: block;
+    font-size: 12px;
+    margin-top: 5px;
+    transition: all 0.3s ease;
 }
 
-#crypto-list li .price {
-    font-size: 22px;
-    font-weight: bold;
-    color: #007bff;
+.password-match-message.error {
+    color: #dc3545;
+}
+
+.password-match-message.success {
+    color: #28a745;
+}
+
+.input-group input:invalid {
+    border-color: #dc3545;
+}
+
+.input-group input:valid {
+    border-color: #28a745;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.input-with-button {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.input-with-button input {
+    flex: 1;
+}
+
+.check-button {
+    padding: 8px 15px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.check-button:hover {
+    background-color: #5a6268;
+}
+
+.validation-message {
+    display: block;
+    font-size: 12px;
+    margin-top: 5px;
+    min-height: 18px;
+}
+
+.validation-message.success {
+    color: #28a745;
+}
+
+.validation-message.error {
+    color: #dc3545;
+}
+
+/* 중복 확인된 입력 필드 스타일 */
+.input-validated {
+    border-color: #28a745 !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+/* 사용자 정보 섹션 세로 정렬 */
+#user-info {
+    display: flex;
+    flex-direction: column; /* 세로 정렬 */
+    align-items: flex-start; /* 왼쪽 정렬 */
+}
+
+/* 각 사용자 정보 항목 간격 추가 */
+#user-info p {
+    margin-bottom: 15px; /* 항목 간 간격을 늘림 */
+}
+
+.message {
+    margin: 8px;
+    max-width: 70%;
+    display: flex;
+    flex-direction: column;
+}
+
+.sender-name {
+    font-size: 0.9em;
+    margin-bottom: 4px;
+    color: black;
+}
+
+.message-bubble {
+    padding: 8px 12px;
+    border-radius: 12px;
+    position: relative;
+}
+
+.message-text {
+    word-break: break-word;
+}
+
+.message-time {
+    font-size: 0.7em;
+    margin-top: 4px;
+    display: block;
+}
+
+.user-message {
+    align-self: flex-end;
+}
+
+.user-message .message-bubble {
+    background-color: #007bff;
+    color: black;
+}
+
+.user-message .message-time {
+    color: black;
+}
+
+.user-message .sender-name {
+    align-self: flex-end;
+}
+
+.other-message {
+    align-self: flex-start;
+}
+
+.other-message .message-bubble {
+    background-color: #e9ecef;
+    color: black;
+}
+
+.other-message .message-time {
+    color: black;
 }

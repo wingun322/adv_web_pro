@@ -5,6 +5,9 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const marketRoutes = require("./routes/marketRoutes");
+const chatRoutes = require("./routes/chatRoutes");
+const http = require("http");
+const socketIo = require("socket.io");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,15 +16,15 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
-// Serve static files
 app.use(express.static("public"));
 
 // MongoDB connection
 dbConnect();
 
-// Use the auth routes
+// Use the auth and market routes
 app.use("/api/auth", authRoutes);
 app.use("/api/market", marketRoutes);
+app.use("/api/chat", chatRoutes);
 
 // Centralized error handling
 app.use((err, req, res, next) => {
@@ -29,7 +32,17 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}.`);
+// HTTP server setup
+const server = http.createServer(app);
+
+// Socket.IO setup
+const io = socketIo(server);
+
+// Socket.IO configuration
+const setupSocket = require("./config/socket");
+setupSocket(io);
+
+// Start server
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

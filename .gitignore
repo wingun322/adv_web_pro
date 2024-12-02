@@ -1,0 +1,6 @@
+# .env 파일을 무시
+.env
+
+# Docker 관련 파일 무시
+Dockerfile
+docker-compose.yml
