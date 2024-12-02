@@ -262,7 +262,8 @@
         window.onload = function() {
             checkLoginStatus();
             startAutoRefresh();
-            fetchFavorites(); // 즐겨찾기 목록 가져오기
+            fetchFavorites();
+            checkNotificationPermission();
         };
 
         // 암호화폐 데이터 새로고침 및 로그인 상태 반영
@@ -553,6 +554,71 @@
             // 화면 갱신
             updateDisplay();
         }
+
+        function checkNotificationPermission() {
+            if (Notification.permission === "default") {
+                document.getElementById('notification-banner').style.display = 'block';
+            }
+        }
+
+        async function requestNotificationPermission() {
+            if (Notification.permission === "granted") {
+                alert("이미 알림이 허용되어 있습니다.");
+                return;
+            }
+
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === "granted") {
+                    alert("알림이 허용되었습니다. 이제 채팅 알림을 받을 수 있습니다.");
+                } else if (permission === "denied") {
+                    alert("알림이 차단되었습니다. 브라우저 설정에서 알림을 허용해주세요.");
+                }
+            } catch (error) {
+                console.error('알림 권한 요청 중 오류:', error);
+                alert('알림 권한 요청 중 오류가 발생했습니다.');
+            }
+            document.getElementById('dropdown-menu').style.display = 'none';
+        }
+
+        function dismissNotificationBanner() {
+            document.getElementById('notification-banner').style.display = 'none';
+            localStorage.setItem('notificationBannerDismissed', 'true');
+        }
+
+        function toggleNotificationSettings() {
+            const modal = document.getElementById('notification-settings');
+            if (modal.style.display === 'none') {
+                updateNotificationList();
+                modal.style.display = 'block';
+            } else {
+                modal.style.display = 'none';
+            }
+        }
+
+        function closeNotificationSettings() {
+            document.getElementById('notification-settings').style.display = 'none';
+        }
+
+        function updateNotificationList() {
+            const notificationList = document.getElementById('notification-list');
+            notificationList.innerHTML = '';
+            
+            state.cryptoData.forEach(crypto => {
+                const item = document.createElement('div');
+                item.className = 'notification-item';
+                item.innerHTML = `
+                    <span>${crypto.koreanName}</span>
+                    <label class="switch">
+                        <input type="checkbox" 
+                            ${state.notifications[crypto.market] ? 'checked' : ''}
+                            onchange="toggleNotification('${crypto.market}')">
+                        <span class="slider round"></span>
+                    </label>
+                `;
+                notificationList.appendChild(item);
+            });
+        }
     </script>
 </head>
 <body>
@@ -569,11 +635,19 @@
             <p><span id="username" onclick="toggleDropdown()" style="cursor: pointer;"></span></p>
             <div id="dropdown-menu" style="display: none;">
                 <a href="profile.html"><button>Profile</button></a>
+                <button onclick="requestNotificationPermission()">알림 설정</button>
                 <button onclick="logout()">Logout</button>
             </div>
         </div>
     </nav>
 </header>
+<div id="notification-banner" style="display: none;" class="notification-banner">
+    <p>실시간 채팅 알림을 받으시겠습니까?</p>
+    <div class="notification-buttons">
+        <button onclick="requestNotificationPermission()" class="allow-btn">허용</button>
+        <button onclick="dismissNotificationBanner()" class="dismiss-btn">나중에</button>
+    </div>
+</div>
 <main>
     <div class="container">
         <section id="crypto-info-section">
@@ -599,5 +673,12 @@
         </section>
     </div>
 </main>
+<div id="notification-settings">
+    <button class="close-button" onclick="closeNotificationSettings()">×</button>
+    <h3>알림 설정</h3>
+    <div id="notification-list">
+        <!-- 여기에 동적으로 알림 설정 목록이 추가됩니다 -->
+    </div>
+</div>
 </body>
 </html>
