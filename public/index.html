@@ -260,6 +260,20 @@
 
         // 페이지 로드 시 로그 상태 확인 및 이터 갱신
         window.onload = function() {
+            const socket = io();
+            const username = localStorage.getItem('username');
+            
+            if (username) {
+                socket.emit("login", username);
+                
+                socket.on("forced_logout", () => {
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('username');
+                    alert('다른 곳에서 로그인이 감지되어 로그아웃됩니다.');
+                    window.location.href = 'login.html';
+                });
+            }
+            
             checkLoginStatus();
             startAutoRefresh();
             fetchFavorites();
