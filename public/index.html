@@ -10,6 +10,8 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/notifications.js"></script>
 
     <script>
         // 로그인 상태 확인 함수
@@ -18,7 +20,7 @@
 
             if (token) {
                 try {
-                    const response = await fetch('http://localhost:5000/api/auth/user', {
+                    const response = await fetch('/api/auth/user', {
                         method: 'GET',
                         headers: {
                             'Authorization': 'Bearer ' + token
@@ -57,14 +59,14 @@
         // 로그아웃 함수
         async function logout() {
             try {
-                const response = await fetch('http://localhost:5000/api/auth/logout', {
+                const response = await fetch('/api/auth/logout', {
                     method: 'POST',
                     credentials: 'include'
                 });
 
                 if (response.ok) {
                     localStorage.removeItem('accessToken');
-                    showAuthLinks(); // 로그아 ��� UI 갱신
+                    showAuthLinks(); // 로그아  UI 갱신
                     updateCryptoList(); // 암호화폐 리스트도 갱신
                 } else {
                     console.error('Failed to logout');
@@ -97,7 +99,10 @@
             },
             cryptoData: [],
             filteredData: [], // 검색 결과를 저장할 배열
-            searchTerm: '' // 현재 검색어를 저장
+            searchTerm: '', // 현재 검색어를 저장
+            favorites: [], // 즐겨찾기 목록 저장
+            showFavorites: false, // 즐겨찾기 표시 여부
+            notifications: JSON.parse(localStorage.getItem('notifications')) || {} // 알림 설정 상태 저장
         };
 
         // 정렬 상태를 저장하는 함수 수정
@@ -110,7 +115,7 @@
         // 암호화폐 데이터 가져오는 함수
         async function fetchCryptoData() {
             try {
-                const response = await fetch('http://localhost:5000/api/market');
+                const response = await fetch('/api/market');
                 if (response.ok) {
                     const data = await response.json();
                     state.cryptoData = data;
@@ -134,7 +139,7 @@
         // 암호화폐 데이터 표시하는 함수
         function displayCryptoData(data) {
             const cryptoList = document.getElementById('crypto-list');
-            cryptoList.innerHTML = ''; // 이전 데이터 삭제
+            cryptoList.innerHTML = '';
 
             data.forEach(item => {
                 const listItem = document.createElement('li');
@@ -143,54 +148,75 @@
                 listItem.dataset.signedChangePrice = item.signedChangePrice;
                 listItem.dataset.signedChangeRate = item.signedChangeRate;
 
+                // 이름과 가격 정보
                 const marketName = document.createElement('span');
                 marketName.textContent = item.koreanName;
+                marketName.className = 'market-name';
 
                 const priceInfo = document.createElement('span');
-                // 가격이 1보다 작을 때만 소수점 표시
                 const formattedPrice = item.tradePrice < 1 
                     ? item.tradePrice.toFixed(8) 
                     : Math.floor(item.tradePrice).toLocaleString();
-                
-                // 변화량과 변화율 계산
                 const changePrice = item.signedChangePrice.toFixed(2);
                 const changeRate = (item.signedChangeRate * 100).toFixed(2);
                 const sign = item.signedChangePrice >= 0 ? '+' : '';
-                
-                // 가격(변화율/변화액) 형식으로 표시
                 priceInfo.textContent = `${formattedPrice} KRW (${sign}${changeRate}%/${sign}${changePrice} KRW)`;
                 priceInfo.style.color = item.priceColor;
 
-                // 채팅방 링크 추가
+                // 채팅방 입장 링크
                 const chatLink = document.createElement('a');
                 chatLink.href = '#';
                 chatLink.textContent = '입장';
+                chatLink.className = 'chat-link';
+                chatLink.style.display = 'block';
+                chatLink.style.marginTop = '10px';
+                chatLink.style.marginBottom = '10px';
                 
                 if (!localStorage.getItem('accessToken')) {
                     chatLink.style.color = 'gray';
-                    chatLink.style.textDecoration = 'none';
-                    chatLink.style.padding = '5px 10px';
-                    chatLink.style.border = '1px solid gray';
-                    chatLink.style.borderRadius = '5px';
                     chatLink.addEventListener('click', function(event) {
                         event.preventDefault();
-                        const userConfirmed = confirm('로그인 후 이용 가능합니다. 로그인 페이지로 이동하시겠니까?');
+                        const userConfirmed = confirm('로그인 후 이용 가능합니다. 로그인 페이지로 이동하시겠습니까?');
                         if (userConfirmed) {
                             window.location.href = 'login.html';
                         }
                     });
                 } else {
-                    chatLink.style.color = 'blue';
-                    chatLink.style.textDecoration = 'none';
-                    chatLink.style.padding = '5px 10px';
-                    chatLink.style.border = '1px solid blue';
-                    chatLink.style.borderRadius = '5px';
                     chatLink.href = `chat.html?cryptoId=${item.market}`;
                 }
 
-                listItem.appendChild(chatLink);
+                // 즐겨찾기와 알림 버튼을 위한 컨테이너
+                const buttonContainer = document.createElement('div');
+                buttonContainer.style.display = 'flex';
+                buttonContainer.style.gap = '10px';
+                buttonContainer.style.justifyContent = 'center';
+
+                // 즐겨찾기 버튼
+                const favoriteButton = document.createElement('button');
+                const isFavorite = state.favorites.includes(item.market);
+                favoriteButton.textContent = isFavorite ? '★ 즐겨찾기' : '☆ 즐겨찾기';
+                favoriteButton.style.backgroundColor = isFavorite ? '#28a745' : '#007bff';
+                favoriteButton.onclick = () => toggleFavorite(item.market);
+
+                // 알림 버튼
+                const notificationButton = document.createElement('button');
+                const isNotificationEnabled = state.notifications[item.market];
+                notificationButton.textContent = isNotificationEnabled ? '알림 켜짐 ●' : '알림 꺼짐 ○';
+                notificationButton.className = 'notification-button';
+                notificationButton.classList.toggle('active', isNotificationEnabled);
+                notificationButton.style.backgroundColor = isNotificationEnabled ? '#28a745' : '#6c757d';
+                notificationButton.onclick = () => toggleNotification(item.market);
+
+                // 버튼들을 컨테이너에 추가
+                buttonContainer.appendChild(favoriteButton);
+                buttonContainer.appendChild(notificationButton);
+
+                // 요소들을 리스트 아이템에 순서대로 추가
                 listItem.appendChild(marketName);
                 listItem.appendChild(priceInfo);
+                listItem.appendChild(chatLink);
+                listItem.appendChild(buttonContainer);
+
                 cryptoList.appendChild(listItem);
             });
         }
@@ -236,6 +262,7 @@
         window.onload = function() {
             checkLoginStatus();
             startAutoRefresh();
+            fetchFavorites(); // 즐겨찾기 목록 가져오기
         };
 
         // 암호화폐 데이터 새로고침 및 로그인 상태 반영
@@ -263,14 +290,23 @@
 
         // 정렬 함수
         function sortCryptoList(criteria, isFiltered = false) {
-            const dataToSort = isFiltered || state.searchTerm 
-                ? state.filteredData 
-                : state.cryptoData;
+            // 현재 표시할 데이터 결정
+            let dataToSort;
+            if (state.showFavorites) {
+                // 즐겨찾기 상태일 때는 즐겨찾기된 항목만 필터링
+                dataToSort = state.cryptoData.filter(item => state.favorites.includes(item.market));
+            } else if (isFiltered || state.searchTerm) {
+                // 검색 필터링된 데이터
+                dataToSort = state.filteredData;
+            } else {
+                // 전체 데이터
+                dataToSort = state.cryptoData;
+            }
 
             const sortFunctions = {
                 name: (a, b) => state.sortDirection.name 
-                    ? a.koreanName.localeCompare(b.koreanName)
-                    : b.koreanName.localeCompare(a.koreanName),
+                    ? b.koreanName.localeCompare(a.koreanName)
+                    : a.koreanName.localeCompare(b.koreanName),
                 price: (a, b) => state.sortDirection.price
                     ? a.tradePrice - b.tradePrice
                     : b.tradePrice - a.tradePrice,
@@ -307,17 +343,30 @@
 
         // Ensure the DOM is fully loaded before running the script
         document.addEventListener('DOMContentLoaded', function() {
-            // 이벤트 리스너 설정
-            document.getElementById('sort-by-name').addEventListener('click', () => toggleSort('name'));
-            document.getElementById('sort-by-price').addEventListener('click', () => toggleSort('price'));
-            document.getElementById('sort-by-changeAmount').addEventListener('click', () => toggleSort('changeAmount'));
-            document.getElementById('sort-by-changeRate').addEventListener('click', () => toggleSort('changeRate'));
+            // 기존 정렬 버튼 이벤트 리스너
+            document.getElementById('sort-by-name')?.addEventListener('click', () => toggleSort('name'));
+            document.getElementById('sort-by-price')?.addEventListener('click', () => toggleSort('price'));
+            document.getElementById('sort-by-changeAmount')?.addEventListener('click', () => toggleSort('changeAmount'));
+            document.getElementById('sort-by-changeRate')?.addEventListener('click', () => toggleSort('changeRate'));
 
-            // 초기 데이터 로드 시 저장된 정렬 상태 적용
+            // 필터 버튼 이벤트 리스너
+            document.getElementById('show-all')?.addEventListener('click', function() {
+                state.showFavorites = false;
+                updateFilterButtons();
+                updateDisplay();
+            });
+
+            document.getElementById('show-favorites')?.addEventListener('click', function() {
+                state.showFavorites = true;
+                updateFilterButtons();
+                updateDisplay();
+            });
+
+            // 초기 데이터 로드
             fetchCryptoData().then(() => {
                 if (state.currentSort) {
                     sortCryptoList(state.currentSort);
-                    updateSortButtons(); // 정렬 버튼 상태 업데이트
+                    updateSortButtons();
                 }
             });
         });
@@ -345,13 +394,12 @@
             listItem.dataset.signedChangeRate = crypto.signedChangeRate;
 
             const marketName = document.createElement('span');
-            marketName.textContent = crypto.koreanName;
+            marketName.className = 'market-name';
+            marketName.textContent = crypto.korean_name;
             
             const priceInfo = document.createElement('span');
-            // 가격이 1보다 작을 때만 소수점 표시
-            const formattedPrice = crypto.tradePrice < 1 
-                ? crypto.tradePrice.toFixed(8) 
-                : Math.floor(crypto.tradePrice);
+            priceInfo.className = 'price';
+            priceInfo.textContent = `₩${Number(crypto.trade_price).toLocaleString()}`;
             
             // 변화량과 변화율 계산
             const changePrice = parseFloat(crypto.signedChangePrice).toFixed(2);
@@ -374,7 +422,7 @@
                 chatLink.style.borderRadius = '5px';
                 chatLink.addEventListener('click', function(event) {
                     event.preventDefault();
-                    const userConfirmed = confirm('로그인 후 용 가능합니다. 로그인 페이지로 이동하시겠습니까?');
+                    const userConfirmed = confirm('로그인 후 이용 가능합니다. 로그인 페이지로 이동하시겠습니까?');
                     if (userConfirmed) {
                         window.location.href = 'login.html';
                     }
@@ -387,12 +435,123 @@
                 chatLink.style.borderRadius = '5px';
                 chatLink.href = `chat.html?cryptoId=${crypto.market}`;
             }
+            // 즐겨찾기 버튼 생성
+            const favoriteButton = document.createElement('button');
+            favoriteButton.textContent = '즐겨찾기';
+            favoriteButton.style.backgroundColor = '#007bff';
+            favoriteButton.style.color = 'white';
+            favoriteButton.style.border = 'none';
+            favoriteButton.style.borderRadius = '5px';
+            favoriteButton.style.padding = '5px 10px';
+            favoriteButton.style.cursor = 'pointer';
+            favoriteButton.style.marginBottom = '10px';
+            favoriteButton.onclick = () => toggleFavorite(crypto.market); // 각 암호화폐의 market ID를 전달
 
             listItem.appendChild(chatLink);
             listItem.appendChild(marketName);
             listItem.appendChild(priceInfo);
+            listItem.appendChild(chatLink);
+            listItem.appendChild(favoriteButton);
             
             return listItem;
+        }
+
+        async function toggleFavorite(cryptoId) {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                alert('로그인이 필요한 서비스입니다.');
+                return;
+            }
+
+            try {
+                const isFavorite = state.favorites.includes(cryptoId);
+                const endpoint = isFavorite ? '/api/auth/favorites/remove' : '/api/auth/favorites/add';
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ cryptoId })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (isFavorite) {
+                        state.favorites = state.favorites.filter(id => id !== cryptoId);
+                    } else {
+                        state.favorites.push(cryptoId);
+                    }
+                    alert(data.message);
+                    updateDisplay();
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('즐겨찾기 처리 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 즐겨찾기 목록 가져오기
+        async function fetchFavorites() {
+            try {
+                const token = localStorage.getItem('accessToken');
+                if (!token) return;
+
+                const response = await fetch('/api/auth/favorites', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    state.favorites = await response.json();
+                    updateDisplay();
+                }
+            } catch (error) {
+                console.error('Error fetching favorites:', error);
+            }
+        }
+
+        // 화면 업데이트 함수
+        function updateDisplay() {
+            const dataToShow = state.showFavorites 
+                ? state.cryptoData.filter(item => state.favorites.includes(item.market))
+                : state.cryptoData;
+            displayCryptoData(dataToShow);
+        }
+
+        // 필터 버튼 상태 업데이트
+        function updateFilterButtons() {
+            document.getElementById('show-all').classList.toggle('active', !state.showFavorites);
+            document.getElementById('show-favorites').classList.toggle('active', state.showFavorites);
+        }
+
+        async function toggleNotification(cryptoId) {
+            if (!localStorage.getItem('accessToken')) {
+                alert('로그인이 필요한 서비스입니다.');
+                return;
+            }
+
+            // 알림 권한 요청
+            if (Notification.permission !== 'granted') {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    alert('알림 권한이 필요합니다.');
+                    return;
+                }
+            }
+
+            // 알림 상태 토글
+            state.notifications[cryptoId] = !state.notifications[cryptoId];
+            localStorage.setItem('notifications', JSON.stringify(state.notifications));
+            
+            // 화면 갱신
+            updateDisplay();
         }
     </script>
 </head>
@@ -419,6 +578,10 @@
     <div class="container">
         <section id="crypto-info-section">
             <h2>현재 암호화폐 가격</h2>
+            <div class="filter-buttons">
+                <button id="show-all" class="filter-btn active">전체 보기</button>
+                <button id="show-favorites" class="filter-btn">즐겨찾기</button>
+            </div>
             <input
                     type="text"
                     id="search-bar"

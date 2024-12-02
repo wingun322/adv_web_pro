@@ -21,8 +21,15 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  isAdmin: { 
+    type: Boolean, 
+    default: false 
+  },
   verificationCode: String,
-  verificationCodeExpires: Date
+  verificationCodeExpires: Date,
+  favorites: [{
+    type: String
+  }]
 });
 
 // 비밀번호 해시화 함수 (회원가입 시 자동 실행)

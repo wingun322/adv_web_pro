@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/notifications.js"></script>
 </head>
 <body>
     <header>
@@ -47,6 +49,11 @@
                 <button id="update-password">Update Password</button>
                 <small id="passwordUpdateMessage" class="validation-message"></small>
             </div>
+            <div id="admin-section" style="display: none;">
+                <h2>Admin Panel</h2>
+                <button id="user-management">User Management</button>
+                <button id="chat-management">Chat Management</button>
+            </div>
         </div>
         <div id="message"></div>
     </main>
@@ -61,6 +68,12 @@
             const data = await response.json();
             document.getElementById('username-display').innerText = data.user.username;
             document.getElementById('email-display').innerText = data.user.email;
+
+            // Check if the user is an admin
+            if (data.user.isAdmin) {
+                console.log("User is an admin");
+                document.getElementById('admin-section').style.display = 'block';
+            }
         }
 
         document.getElementById('edit-username').addEventListener('click', () => {
@@ -197,6 +210,15 @@
             const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
             return passwordPattern.test(password);
         }
+
+        // Add event listeners for admin buttons
+        document.getElementById('user-management').addEventListener('click', () => {
+            window.location.href = 'user-management.html'; // Redirect to user management page
+        });
+
+        document.getElementById('chat-management').addEventListener('click', () => {
+            window.location.href = 'chat-management.html'; // Redirect to chat management page
+        });
 
         // Load user info on page load
         window.onload = loadUserInfo;

@@ -6,11 +6,12 @@ const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const marketRoutes = require("./routes/marketRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const http = require("http");
 const socketIo = require("socket.io");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 
 // Middleware settings
 app.use(cors());
@@ -25,6 +26,7 @@ dbConnect();
 app.use("/api/auth", authRoutes);
 app.use("/api/market", marketRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Centralized error handling
 app.use((err, req, res, next) => {

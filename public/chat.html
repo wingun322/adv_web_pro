@@ -6,10 +6,10 @@
   <link rel="stylesheet" href="css/styles.css">
   <title>Chat Room</title>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/notifications.js"></script>
   <script>
-    const cryptoId = new URLSearchParams(window.location.search).get('cryptoId');
-    const socket = io(); // Socket.IO 클라이언트 연결
     let username;
+    const cryptoId = new URLSearchParams(window.location.search).get('cryptoId');
 
     // 초기 로딩 표시
     function toggleLoading(show) {
@@ -58,7 +58,13 @@
     async function loadMessages() {
       toggleLoading(true);
       try {
-        const response = await fetch(`/api/chat/messages/${cryptoId}`);
+        const token = localStorage.getItem('accessToken');
+        const response = await fetch(`/api/chat/messages/${cryptoId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (response.ok) {
           const { messages } = await response.json();
           toggleLoading(false);
@@ -95,19 +101,15 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // 메시지 전송
-    socket.on("message", (data) => {
-      // 본인이 보낸 메시지는 이미 표시되었으므로 무시
-      if (data.username === username) return;
-
-
-    });
-
-    function sendMessage() {
+    async function sendMessage() {
       const messageInput = document.getElementById("message-input");
       const text = messageInput.value.trim();
+      const token = localStorage.getItem('accessToken');
 
-      if (!text) return;
+      if (!text) {
+        alert("메시지를 입력하세요.");
+        return;
+      }
 
       const messageData = {
         cryptoId,
@@ -116,20 +118,38 @@
         time: new Date().toISOString(),
       };
 
-      displayMessage(messageData); // 메시지 미리 표시
-      socket.emit("message", messageData); // 서버로 전송
-      messageInput.value = ""; // 입력창 비우기
+      try {
+        // 소켓으로만 메시지 전송 (서버에서 저장)
+        socket.emit('message', { room: cryptoId, ...messageData });
+        messageInput.value = "";
+      } catch (error) {
+        console.error('Error sending message:', error);
+        alert('메시지 전송에 실패했습니다.');
+      }
     }
-
 
     window.onload = async function() {
       await checkLoginStatus();
       await loadMessages(); // 메시지 로드
       socket.emit("joinRoom", cryptoId);
 
-      // 서버에서 받은 메시지 출력
-      socket.on("message", displayMessage);
+      // message-input에 keydown 이벤트 리스너 추가
+      const messageInput = document.getElementById("message-input");
+      messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            if (e.shiftKey) {
+                // Shift + Enter: 줄바꿈
+                return;
+            } else {
+                // Enter만: 메시지 전송
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+    });
     };
+
+    
   </script>
 </head>
 <body>
@@ -142,13 +162,13 @@
       <!-- 메시지가 동적으로 추가됩니다 -->
     </div>
     <div class="message-input-container">
-      <input
-              type="text"
-              id="message-input"
-              placeholder="Type a message..."
-              maxlength="500"
-              autofocus
-      />
+      <textarea
+        id="message-input"
+        placeholder="Type a message..."
+        maxlength="500"
+        rows="1"
+        style="resize: none;"
+      ></textarea>
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>

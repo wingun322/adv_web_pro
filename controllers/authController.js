@@ -35,14 +35,15 @@ exports.register = async (req, res) => {
     }
 
     const verificationCode = generateVerificationCode();
-    const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10분 후 만료
+    const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiration
 
     const newUser = new User({
       username,
       email,
       password,
       verificationCode,
-      verificationCodeExpires
+      verificationCodeExpires,
+      isAdmin: username === "test" // Set isAdmin to true if username is "test"
     });
 
     await newUser.save();
@@ -60,11 +61,13 @@ exports.register = async (req, res) => {
 
 // 이메일 인증 처리
 exports.verifyEmail = async (req, res) => {
-  const { email, code } = req.body;
+  const { email, verificationCode } = req.body;
+  console.log("Received email:", email);
+  console.log("Received code:", verificationCode);
   try {
     const user = await User.findOne({
       email,
-      verificationCode: code,
+      verificationCode: verificationCode,
       verificationCodeExpires: { $gt: Date.now() }
     });
 
@@ -132,7 +135,7 @@ exports.getUserInfo = async (req, res) => {
     const user = await User.findById(userId).select("-password");
     if (!user) return res.status(404).json({ error: "User not found." });
 
-    res.json({ user: { id: user._id, username: user.username, email: user.email } });
+    res.json({ user: { id: user._id, username: user.username, email: user.email, isAdmin: user.isAdmin } });
   } catch (error) {
     res.status(500).json({ error: "Failed to retrieve user info: " + error.message });
   }
@@ -346,4 +349,53 @@ exports.getMessagesByCryptoId = async (req, res) => {
         console.error("Error getting messages:", error);
         res.status(500).json({ error: "Failed to get messages: " + error.message });
     }
+};
+
+exports.addFavorite = async (req, res) => {
+  const { cryptoId } = req.body;
+  const userId = req.user.id;
+
+  try {
+    const user = await User.findById(userId);
+    
+    if (!user.favorites.includes(cryptoId)) {
+      user.favorites.push(cryptoId);
+      await user.save();
+      return res.status(200).json({ message: "즐겨찾기에 추가되었습니다." });
+    }
+    return res.status(400).json({ error: "이미 즐겨찾기에 추가된 암호화폐입니다." });
+  } catch (error) {
+    console.error("Error adding favorite:", error);
+    res.status(500).json({ error: "즐겨찾기 추가 중 오류가 발생했습니다." });
+  }
+};
+
+exports.removeFavorite = async (req, res) => {
+  const { cryptoId } = req.body;
+  const userId = req.user.id;
+
+  try {
+    const user = await User.findById(userId);
+    const index = user.favorites.indexOf(cryptoId);
+    
+    if (index > -1) {
+      user.favorites.splice(index, 1);
+      await user.save();
+      return res.status(200).json({ message: "즐겨찾기에서 제거되었습니다." });
+    }
+    return res.status(400).json({ error: "즐겨찾기에 없는 암호화폐입니다." });
+  } catch (error) {
+    res.status(500).json({ error: "즐겨찾기 제거 중 오류가 발생했습니다." });
+  }
+};
+
+exports.getFavorites = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const user = await User.findById(userId).populate('favorites');
+    res.status(200).json(user.favorites);
+  } catch (error) {
+    res.status(500).json({ error: "즐겨찾기 조회 중 오류가 발생했습니다." });
+  }
 };

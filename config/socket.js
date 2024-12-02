@@ -23,7 +23,7 @@ function setupSocket(io) {
         });
 
         socket.on("message", async (data) => {
-            const { cryptoId, username, text } = data;
+            const { room: cryptoId, username, text } = data;
 
             try {
                 const Chat = getChatModel(cryptoId);
@@ -31,7 +31,12 @@ function setupSocket(io) {
                 await newMessage.save();
 
                 console.log(`Broadcasting message to room ${cryptoId}: ${text}`);
-                socket.to(cryptoId).emit("message", { username, text, time: newMessage.time });
+                io.to(cryptoId).emit("message", { 
+                    cryptoId, 
+                    username, 
+                    text, 
+                    time: newMessage.time 
+                });
             } catch (error) {
                 console.error("Error saving message:", error);
             }
