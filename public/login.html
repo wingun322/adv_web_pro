@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" href="css/styles.css"> <!-- Link to your CSS file -->
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <header>
@@ -53,7 +54,21 @@
             if (response.ok) {
                 const data = await response.json();
                 localStorage.setItem('accessToken', data.accessToken);
-                window.location.href = 'index.html'; // 로그인 성공 후 홈페이지로 리다이렉트
+                localStorage.setItem('username', data.username);
+                
+                // Socket.IO로 로그인 이벤트 발생
+                const socket = io();
+                socket.emit("login", data.username);
+                
+                // 강제 로그아웃 이벤트 리스너
+                socket.on("forced_logout", () => {
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('username');
+                    alert('다른 곳에서 로그인이 감지되어 로그아웃됩니다.');
+                    window.location.href = 'login.html';
+                });
+
+                window.location.href = 'index.html';
             } else {
                 alert('Login failed');
             }
