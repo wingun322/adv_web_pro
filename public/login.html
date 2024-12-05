@@ -58,7 +58,11 @@
                 
                 // Socket.IO로 로그인 이벤트 발생
                 const socket = io();
-                socket.emit("login", data.username);
+                socket.emit("login", { 
+                    username: data.username,
+                    email: email,
+                    userId: data.userId  // 서버에서 userId도 함께 전송해야 함
+                });
                 
                 // 강제 로그아웃 이벤트 리스너
                 socket.on("forced_logout", () => {

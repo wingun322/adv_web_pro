@@ -9,11 +9,15 @@ function setupSocket(io) {
         console.log(`Socket connected: ${socket.id}`);
 
         // 로그인 이벤트 처리
-        socket.on("login", (username) => {
+        socket.on("login", (data) => {
+            const { username, email, userId } = data;
+            // userId로 사용자 식별
+            const userKey = userId;
+            
             // 이미 로그인된 사용자인지 확인
-            const existingSocket = userSessions.get(username);
+            const existingSocket = userSessions.get(userKey);
             if (existingSocket && existingSocket !== socket.id) {
-                // 기존 연결을 강제로 끊음
+                // 같은 사용자 ID일 경우에만 강제 로그아웃
                 io.to(existingSocket).emit("forced_logout");
                 const oldSocket = io.sockets.sockets.get(existingSocket);
                 if (oldSocket) {
@@ -22,8 +26,8 @@ function setupSocket(io) {
             }
             
             // 새로운 세션 저장
-            userSessions.set(username, socket.id);
-            socket.username = username;
+            userSessions.set(userKey, socket.id);
+            socket.userKey = userKey;
         });
 
         // 암호화폐별 채팅방에 사용자 추가
