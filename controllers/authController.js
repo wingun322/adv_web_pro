@@ -102,7 +102,12 @@ exports.login = async (req, res) => {
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
     res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "strict" });
-    res.json({ message: "Login successful", accessToken });
+    res.json({ 
+      message: "Login successful", 
+      accessToken,
+      username: user.username,
+      userId: user._id
+    });
   } catch (error) {
     res.status(500).json({ error: "Login failed: " + error.message });
   }
@@ -341,7 +346,7 @@ exports.getMessagesByCryptoId = async (req, res) => {
         // 해당 cryptoId로 컬렉션 가져오기
         const Chat = getChatModel(cryptoId);
 
-        // 채팅방의 메시지 가져오기
+        // 채팅방의 메시지 가���오기
         const messages = await Chat.find({});
 
         res.json({ messages });

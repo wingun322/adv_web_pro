@@ -65,9 +65,33 @@
                 });
 
                 if (response.ok) {
+                    // 로컬 스토리지 초기화
                     localStorage.removeItem('accessToken');
-                    showAuthLinks(); // 로그아  UI 갱신
-                    updateCryptoList(); // 암호화폐 리스트도 갱신
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('notifications');
+                    
+                    // 상태 초기화
+                    state.notifications = {};
+                    state.favorites = [];
+                    
+                    // UI 업데이트
+                    showAuthLinks();
+                    updateDisplay();
+                    
+                    // 채팅방 입장 버튼 스타일 업데이트
+                    const chatLinks = document.querySelectorAll('.chat-link');
+                    chatLinks.forEach(link => {
+                        link.style.color = 'gray';
+                        link.style.border = '1px solid gray';
+                        link.href = '#';
+                        link.onclick = function(event) {
+                            event.preventDefault();
+                            const userConfirmed = confirm('로그인 후 이용 가능합니다. 로그인 페이지로 이동하시겠습니까?');
+                            if (userConfirmed) {
+                                window.location.href = 'login.html';
+                            }
+                        };
+                    });
                 } else {
                     console.error('Failed to logout');
                 }
@@ -205,6 +229,7 @@
                 notificationButton.className = 'notification-button';
                 notificationButton.classList.toggle('active', isNotificationEnabled);
                 notificationButton.style.backgroundColor = isNotificationEnabled ? '#28a745' : '#6c757d';
+                notificationButton.dataset.cryptoId = item.market;
                 notificationButton.onclick = () => toggleNotification(item.market);
 
                 // 버튼들을 컨테이너에 추가
@@ -238,7 +263,7 @@
             }, 5000); // Every 5 seconds
         }
 
-        // 자동 새로 고침 함수
+        // 자동 새로 고침 ��수
         function startAutoRefresh() {
             fetchCryptoData(); // 초기 데이터 가져오기
             setInterval(() => {
@@ -262,15 +287,27 @@
         window.onload = function() {
             const socket = io();
             const username = localStorage.getItem('username');
+            const token = localStorage.getItem('accessToken');
             
-            if (username) {
-                socket.emit("login", username);
-                
-                socket.on("forced_logout", () => {
-                    localStorage.removeItem('accessToken');
-                    localStorage.removeItem('username');
-                    alert('다른 곳에서 로그인이 감지되어 로그아웃됩니다.');
-                    window.location.href = 'login.html';
+            if (username && token) {
+                // 사용자 정보 가져오기
+                fetch('/api/auth/user', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    socket.emit("login", {
+                        username: username,
+                        email: data.user.email,
+                        userId: data.user.id
+                    });
+                    
+                    socket.on("forced_logout", () => {
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('username');
+                        alert('다른 곳에서 로그인이 감지되어 로그아웃됩니다.');
+                        window.location.href = 'login.html';
+                    });
                 });
             }
             
@@ -295,7 +332,7 @@
                 item.koreanName.toLowerCase().includes(searchInput)
             );
             
-            // 현재 정렬 상태 유지하면서 필터링된 데이터 표시
+            // 현재 정렬 상태 유지하면서 ��터링된 데이터 표시
             if (state.currentSort) {
                 sortCryptoList(state.currentSort, true);
             } else {
@@ -426,6 +463,7 @@
 
             // 채팅방 링크 추가
             const chatLink = document.createElement('a');
+            chatLink.className = 'chat-link';
             chatLink.href = '#';
             chatLink.textContent = '입장';
             
@@ -474,7 +512,7 @@
         async function toggleFavorite(cryptoId) {
             const token = localStorage.getItem('accessToken');
             if (!token) {
-                alert('로그인이 필요한 서비스입니다.');
+                alert('로그인이 필요한 ��비스입니다.');
                 return;
             }
 
@@ -552,61 +590,38 @@
                 return;
             }
 
-            // 알림 권한 요청
-            if (Notification.permission !== 'granted') {
-                const permission = await Notification.requestPermission();
-                if (permission !== 'granted') {
-                    alert('알림 권한이 필요합니다.');
-                    return;
-                }
-            }
-
-            // 알림 상태 토글
+            // 상태 업데이트
             state.notifications[cryptoId] = !state.notifications[cryptoId];
             localStorage.setItem('notifications', JSON.stringify(state.notifications));
-            
-            // 화면 갱신
-            updateDisplay();
-        }
 
-        function checkNotificationPermission() {
-            if (Notification.permission === "default") {
-                document.getElementById('notification-banner').style.display = 'block';
-            }
-        }
-
-        async function requestNotificationPermission() {
-            if (Notification.permission === "granted") {
-                alert("이미 알림이 허용되어 있습니다.");
-                return;
+            // 소켓 이벤트 처리
+            if (state.notifications[cryptoId]) {
+                socket.emit("joinRoom", cryptoId);
             }
 
-            try {
-                const permission = await Notification.requestPermission();
-                if (permission === "granted") {
-                    alert("알림이 허용되었습니다. 이제 채팅 알림을 받을 수 있습니다.");
-                } else if (permission === "denied") {
-                    alert("알림이 차단되었습니다. 브라우저 설정에서 알림을 허용해주세요.");
-                }
-            } catch (error) {
-                console.error('알림 권한 요청 중 오류:', error);
-                alert('알림 권한 요청 중 오류가 발생했습니다.');
+            // 버튼 상태 즉시 업데이트
+            const button = document.querySelector(`.notification-button[data-crypto-id="${cryptoId}"]`);
+            if (button) {
+                const isNotificationEnabled = state.notifications[cryptoId];
+                button.textContent = isNotificationEnabled ? '알림 켜짐 ●' : '알림 꺼짐 ○';
+                button.style.backgroundColor = isNotificationEnabled ? '#28a745' : '#6c757d';
+                button.classList.toggle('active', isNotificationEnabled);
             }
-            document.getElementById('dropdown-menu').style.display = 'none';
-        }
 
-        function dismissNotificationBanner() {
-            document.getElementById('notification-banner').style.display = 'none';
-            localStorage.setItem('notificationBannerDismissed', 'true');
+            // 알림 설정 모달의 체크박스도 업데이트
+            const modalCheckbox = document.querySelector(`#notification-list input[data-crypto-id="${cryptoId}"]`);
+            if (modalCheckbox) {
+                modalCheckbox.checked = state.notifications[cryptoId];
+            }
         }
 
         function toggleNotificationSettings() {
             const modal = document.getElementById('notification-settings');
-            if (modal.style.display === 'none') {
+            if (modal.style.display === 'block') {
+                modal.style.display = 'none';
+            } else {
                 updateNotificationList();
                 modal.style.display = 'block';
-            } else {
-                modal.style.display = 'none';
             }
         }
 
@@ -621,11 +636,16 @@
             state.cryptoData.forEach(crypto => {
                 const item = document.createElement('div');
                 item.className = 'notification-item';
+                
+                // cryptoId에서 코인 이름만 추출 (예: KRW-BTC -> BTC)
+                const coinName = crypto.market.split('-')[1];
+                
                 item.innerHTML = `
-                    <span>${crypto.koreanName}</span>
+                    <span>${coinName}</span>
                     <label class="switch">
                         <input type="checkbox" 
                             ${state.notifications[crypto.market] ? 'checked' : ''}
+                            data-crypto-id="${crypto.market}"
                             onchange="toggleNotification('${crypto.market}')">
                         <span class="slider round"></span>
                     </label>
@@ -649,19 +669,12 @@
             <p><span id="username" onclick="toggleDropdown()" style="cursor: pointer;"></span></p>
             <div id="dropdown-menu" style="display: none;">
                 <a href="profile.html"><button>Profile</button></a>
-                <button onclick="requestNotificationPermission()">알림 설정</button>
+                <button onclick="toggleNotificationSettings()">알림 설정</button>
                 <button onclick="logout()">Logout</button>
             </div>
         </div>
     </nav>
 </header>
-<div id="notification-banner" style="display: none;" class="notification-banner">
-    <p>실시간 채팅 알림을 받으시겠습니까?</p>
-    <div class="notification-buttons">
-        <button onclick="requestNotificationPermission()" class="allow-btn">허용</button>
-        <button onclick="dismissNotificationBanner()" class="dismiss-btn">나중에</button>
-    </div>
-</div>
 <main>
     <div class="container">
         <section id="crypto-info-section">
@@ -687,7 +700,7 @@
         </section>
     </div>
 </main>
-<div id="notification-settings">
+<div id="notification-settings" style="display: none;">
     <button class="close-button" onclick="closeNotificationSettings()">×</button>
     <h3>알림 설정</h3>
     <div id="notification-list">
