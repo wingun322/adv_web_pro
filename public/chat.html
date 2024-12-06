@@ -36,6 +36,13 @@
           if (response.ok) {
             const data = await response.json();
             username = data.user.username;
+            socket.emit("login", {
+              username: username,
+              userId: data.user.id
+            });
+            if (cryptoId) {
+              socket.emit("joinRoom", cryptoId);
+            }
           } else {
             handleUnauthenticated();
           }
@@ -128,50 +135,59 @@
       }
     }
 
-    window.onload = async function() {
-      await checkLoginStatus();
-      await loadMessages(); // 메시지 로드
-      socket.emit("joinRoom", cryptoId);
-
-      // message-input에 keydown 이벤트 리스너 추가
-      const messageInput = document.getElementById("message-input");
-      messageInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            if (e.shiftKey) {
-                // Shift + Enter: 줄바꿈
-                return;
-            } else {
-                // Enter만: 메시지 전송
-                e.preventDefault();
-                sendMessage();
-            }
-        }
+    // socket 이벤트 리스너 등록
+    socket.on("updateUserList", (users) => {
+        console.log("Received user list update:", users);
+        const userList = document.getElementById("user-list");
+        userList.innerHTML = '';
+        
+        users.forEach(user => {
+            const li = document.createElement("li");
+            li.textContent = user;
+            userList.appendChild(li);
+        });
     });
+
+    // 페이지 로드 시 실행
+    window.onload = async function() {
+        await checkLoginStatus();
+        await loadMessages();
     };
 
-    
+    // beforeunload 이벤트 리스너 추가
+    window.addEventListener('beforeunload', () => {
+        if (cryptoId) {
+            socket.emit("leaveRoom", cryptoId);
+        }
+    });
   </script>
 </head>
 <body>
-<header>
-  <a href="index.html" class="logo">Bit Chat</a>
-</header>
-<main>
-  <div class="container">
-    <div id="chat-box" class="chat-box">
-      <!-- 메시지가 동적으로 추가됩니다 -->
-    </div>
-    <div class="message-input-container">
-      <textarea
-        id="message-input"
-        placeholder="Type a message..."
-        maxlength="500"
-        rows="1"
-        style="resize: none;"
-      ></textarea>
-      <button onclick="sendMessage()">Send</button>
-    </div>
-  </div>
-</main>
+    <header>
+        <a href="index.html" class="logo">Bit Chat</a>
+    </header>
+    <main>
+        <div class="container">
+            <div class="chat-container">
+                <div class="user-list-sidebar">
+                    <h3>현재 접속자</h3>
+                    <ul id="user-list"></ul>
+                </div>
+                <div class="chat-main">
+                    <div id="chat-box"></div>
+                    <div class="message-input-container">
+                        <textarea
+                            id="message-input"
+                            placeholder="Type a message..."
+                            maxlength="500"
+                            rows="1"
+                            style="resize: none;"
+                        ></textarea>
+                        <button onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 </body>
 </html>

@@ -2,6 +2,7 @@ const { getChatModel } = require("../models/Chat");
 
 // 사용자 세션 관리를 위한 Map
 const userSessions = new Map();
+const roomUsers = new Map(); // 방 별 사용자 목록 관리
 
 // Socket.IO 설정 함수
 function setupSocket(io) {
@@ -10,14 +11,13 @@ function setupSocket(io) {
 
         // 로그인 이벤트 처리
         socket.on("login", (data) => {
-            const { username, email, userId } = data;
-            // userId로 사용자 식별
+            const { username, userId } = data;
+            console.log("Login event received:", { username, userId });
+            socket.username = username; // username을 소켓에 저장
             const userKey = userId;
             
-            // 이미 로그인된 사용자인지 확인
             const existingSocket = userSessions.get(userKey);
             if (existingSocket && existingSocket !== socket.id) {
-                // 같은 사용자 ID일 경우에만 강제 로그아웃
                 io.to(existingSocket).emit("forced_logout");
                 const oldSocket = io.sockets.sockets.get(existingSocket);
                 if (oldSocket) {
@@ -25,26 +25,38 @@ function setupSocket(io) {
                 }
             }
             
-            // 새로운 세션 저장
             userSessions.set(userKey, socket.id);
             socket.userKey = userKey;
         });
 
         // 암호화폐별 채팅방에 사용자 추가
         socket.on("joinRoom", (cryptoId) => {
-            console.log(`Socket ${socket.id} is attempting to join room: ${cryptoId}`);
-            if (!cryptoId) {
-                console.error("Invalid cryptoId provided");
+            if (!cryptoId || !socket.username) {
+                console.log("Missing cryptoId or username:", { cryptoId, username: socket.username });
                 return;
             }
 
-            if ([...socket.rooms].includes(cryptoId)) {
-                console.log(`Socket ${socket.id} is already in room: ${cryptoId}`);
-                return;
-            }
+            console.log(`${socket.username} is joining room ${cryptoId}`);
 
+            // 이전 방에서 나가기
+            Array.from(socket.rooms).forEach(room => {
+                if (room !== socket.id) {
+                    socket.leave(room);
+                    const users = roomUsers.get(room) || new Set();
+                    users.delete(socket.username);
+                    roomUsers.set(room, users);
+                    io.to(room).emit("updateUserList", Array.from(users));
+                }
+            });
+
+            // 새로운 방에 입장
             socket.join(cryptoId);
-            console.log(`Socket ${socket.id} joined room: ${cryptoId}`);
+            const users = roomUsers.get(cryptoId) || new Set();
+            users.add(socket.username);
+            roomUsers.set(cryptoId, users);
+            
+            console.log(`Current users in room ${cryptoId}:`, Array.from(users));
+            io.to(cryptoId).emit("updateUserList", Array.from(users));
         });
 
         socket.on("message", async (data) => {
@@ -69,10 +81,30 @@ function setupSocket(io) {
 
         // 사용자가 연결을 끊었을 때 모든 방에서 제거
         socket.on("disconnect", () => {
-            if (socket.username) {
-                userSessions.delete(socket.username);
-            }
             console.log(`Socket disconnected: ${socket.id}`);
+            if (socket.username) {
+                Array.from(socket.rooms).forEach(room => {
+                    if (room !== socket.id) {
+                        const users = roomUsers.get(room) || new Set();
+                        users.delete(socket.username);
+                        roomUsers.set(room, users);
+                        io.to(room).emit("updateUserList", Array.from(users));
+                    }
+                });
+            }
+            userSessions.delete(socket.userKey);
+        });
+
+        // 채팅방 나가기 이벤트 추가
+        socket.on("leaveRoom", (cryptoId) => {
+            if (cryptoId && socket.username) {
+                socket.leave(cryptoId);
+                const users = roomUsers.get(cryptoId) || new Set();
+                users.delete(socket.username);
+                roomUsers.set(cryptoId, users);
+                io.to(cryptoId).emit("updateUserList", Array.from(users));
+                console.log(`${socket.username} left room ${cryptoId}`);
+            }
         });
     });
 }
