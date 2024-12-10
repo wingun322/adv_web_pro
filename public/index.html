@@ -314,7 +314,6 @@
             checkLoginStatus();
             startAutoRefresh();
             fetchFavorites();
-            checkNotificationPermission();
         };
 
         // 암호화폐 데이터 새로고침 및 로그인 상태 반영
@@ -332,7 +331,6 @@
                 item.koreanName.toLowerCase().includes(searchInput)
             );
             
-            // 현재 정렬 상태 유지하면서 ��터링된 데이터 표시
             if (state.currentSort) {
                 sortCryptoList(state.currentSort, true);
             } else {
