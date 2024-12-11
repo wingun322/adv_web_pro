@@ -114,10 +114,11 @@
             }
 
             try {
-                const response = await fetch('/api/auth/send-verification-code', {
+                const response = await fetch('/api/auth/sendverificationcode', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
                     },
                     body: JSON.stringify({ email }),
                 });
@@ -140,10 +141,11 @@
             const messageElement = document.getElementById('verificationMessage');
 
             try {
-                const response = await fetch('/api/auth/verify-code', {
+                const response = await fetch('/api/auth/verifycode', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
                     },
                     body: JSON.stringify({ email, code }),
                 });
