@@ -148,27 +148,31 @@ exports.getUserInfo = async (req, res) => {
 
 // 인증 코드 확인
 exports.verifyCode = async (req, res) => {
-  const { email, code } = req.body;
-  try {
-    const user = await User.findOne({
-      email,
-      verificationCode: code,
-      verificationCodeExpires: { $gt: Date.now() }
-    });
+    const { email, code } = req.body;
+    const userId = req.user.id;
+    
+    try {
+        let user;
+        user = await User.findById(userId);  // userId로 직접 검색
+        
+        if (!user) {
+            return res.status(400).json({ error: "유효하지 않거나 만료된 인증 코드입니다." });
+        }
 
-    if (!user) {
-      return res.status(400).json({ error: "유효하지 않거나 만료된 인증 코드입니다." });
+        // 인증 코드 확인
+        if (user.verificationCode !== code || user.verificationCodeExpires < new Date()) {
+            return res.status(400).json({ error: "유효하지 않거나 만료된 인증 코드입니다." });
+        }
+
+        // 인증 성공 시 처리
+        user.verificationCode = undefined;
+        user.verificationCodeExpires = undefined;
+        await user.save();
+
+        res.json({ message: "이메일 인증이 완료되었습니다." });
+    } catch (error) {
+        res.status(500).json({ error: "인증 처리 중 오류가 발생했습니다: " + error.message });
     }
-
-    // 인증 성공 시 처리
-    user.verificationCode = undefined;
-    user.verificationCodeExpires = undefined;
-    await user.save();
-
-    res.json({ message: "이메일 인증이 완료되었습니다." });
-  } catch (error) {
-    res.status(500).json({ error: "인증 처리 중 오류가 발생했습니다: " + error.message });
-  }
 };
 
 // 인증 코드 재전송
@@ -312,12 +316,22 @@ exports.updatePassword = async (req, res) => {
 // Send verification code
 exports.sendVerificationCode = async (req, res) => {
     const { email } = req.body;
-
+    const userId = req.user.id;
+    
     try {
+        let user;
         // Check if the user exists
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ error: "User not found." });
+        if(userId){
+            user = await User.findById(userId);
+            if (!user) {
+                return res.status(404).json({ error: "User not found." });
+            }
+        }
+        else{
+            user = await User.findOne({ email });
+            if (!user) {
+                return res.status(404).json({ error: "User not found." });
+            }
         }
 
         // Generate a verification code
@@ -328,7 +342,6 @@ exports.sendVerificationCode = async (req, res) => {
         user.verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10분 후 만료
         await user.save();
 
-        // Send verification code using emailService
         await sendVerificationCode(email, verificationCode);
 
         res.json({ message: "인증번호가 이메일로 전송되었습니다." });
@@ -346,7 +359,7 @@ exports.getMessagesByCryptoId = async (req, res) => {
         // 해당 cryptoId로 컬렉션 가져오기
         const Chat = getChatModel(cryptoId);
 
-        // 채팅방의 메시지 가���오기
+        // 채팅방의 메시지 가져오기
         const messages = await Chat.find({});
 
         res.json({ messages });
